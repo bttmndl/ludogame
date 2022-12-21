@@ -1,4 +1,5 @@
 import React from "react";
+import star from './star.png'
 
 let arrrow = [];
 for (let i = 0; i < 3; i++) {
@@ -41,7 +42,9 @@ export default function Three() {
         return (
           <div style={row}>
             {arrcol.map((elocol, colidx) => {
-              return <div style={col}></div>;
+              return <div style={{ ...col, backgroundColor: (rowidx==1&&colidx!==5)||(rowidx==2&&colidx==4)?'blue':'white'}}>
+                {((rowidx==2&&colidx==4) ||(rowidx==0&&colidx==3)) && <div><img style={{marginLeft:'3px',marginTop:'3px',height:'25px', width:'30px', border:'1px solid black'}} src={star}/></div>}
+              </div>;
             })}
           </div>
         );

@@ -1,5 +1,5 @@
 import React from "react";
-
+import star from "./star.png";
 
 let arrrow = [];
 for (let i = 0; i < 3; i++) {
@@ -12,8 +12,7 @@ for (let i = 0; i < 6; i++) {
 
 export default function Four() {
   const fourStyle = {
-    height: "250px",
-    width: "98.7px",
+    width: "100px",
     boder: "1px solid black",
     backgroundColor: "grey",
     display: "flex",
@@ -22,8 +21,8 @@ export default function Four() {
   };
 
   const row = {
-    width: "33.3333%",
-    height: "250px",
+    width: "33.333333px",
+    height: "249px",
     backgroundColor: "white",
     border: "0.2px solid black",
   };
@@ -39,7 +38,9 @@ export default function Four() {
         return (
           <div style={row}>
             {arrcol.map((elocol, colidx) => {
-              return <div style={col}></div>;
+              return <div style={{ ...col, backgroundColor: (rowidx==1&&colidx!==5)||(rowidx==0&&colidx==4)?'yellow':'white'}}>
+                {((rowidx==2&&colidx==3) ||(rowidx==0&&colidx==4)) && <div><img style={{marginRight:'3px',marginTop:'8px',height:'25px', width:'30px', border:'1px solid black'}} src={star}/></div>}
+              </div>;
             })}
           </div>
         );

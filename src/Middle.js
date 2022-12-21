@@ -1,11 +1,18 @@
 import React from "react";
-
+import middle from './middle.jpg';
 export default function Middle() {
   const middleStyle = {
-    height: "98px",
-    width: "98px",
-    boder: "1px solid black",
+    height: "100px",
+    width: "100px",
+    boder: "0.2px solid black",
     backgroundColor: "grey",
+    display:'flex',
+    justifyContent:'space-around',
   };
-  return <div style={middleStyle}></div>;
+
+  return (
+    <div style={middleStyle}>
+      <img src={middle}></img>
+    </div>
+  );
 }
