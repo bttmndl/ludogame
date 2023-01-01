@@ -1,11 +1,13 @@
 import React from 'react'
-import Board from './Board';
+// import Board from './Board';
+import Main from './Main';
+
 
 const App = () => {
   return (
     <div className='App'>
-      <h1>LudoGame</h1>
-      <Board />
+      {/* <Board /> */}
+      <Main />
     </div>
   )
 }
