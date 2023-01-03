@@ -8,6 +8,7 @@ const App = () => {
     <div className='App'>
       {/* <Board /> */}
       <Main />
+      
     </div>
   )
 }
