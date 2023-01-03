@@ -85,7 +85,7 @@ const TriangleSVG = () => {
 
       {[...Array(1)].map((_, row) => (
         [...Array(12)].map((_, col) => (
-            <polygon
+            <polygon key={col}
               points={points[col]}
               style={{ stroke: '#000', strokeWidth: 1, fill:'none' }}
             />
