@@ -151,86 +151,138 @@ const points = [
   
 ];
 
+const avoidMove = [24, 42, 60, 78, 96, 6];
+const delMove = [12,30,48,66,84,102];
+const changeIdIntialState = {"red":0, "blue":0, "green":0, "yellow":0, "orange":0, "purple":0};
 
 const TriangleSVG = () => {
-    const [color, setColor] = useState("purple");
-    const [changeId, setChangeId] = useState({});
-    const [dice, setDice] = useState(5);
-    const [currentGoti, setCurrentGoti] = useState();
-    const [currentPlayer, setCurrentPlayer] = useState(1); 
-    const [flag, setFlag] = useState(false);
-    let k = null;
-    let kk =null;
-    const handleClick = () => {
-        // k = setInterval(() => {
-        //     setColor((pre) =>
-        //     pre == "black" ? (pre = "purple") : (pre = "black")
-        //     );
-        // }, 100);
-        intialDiceThrow();
-    };
+  const [color, setColor] = useState("purple");
+  const [changeId, setChangeId] = useState(changeIdIntialState);
+  // const [avoidMove, setAvoidMove] = useState([24, 42, 60, 78, 96, 6]);
+  const [dice, setDice] = useState(4);
+  const [currentGoti, setCurrentGoti] = useState();
+  const [currentPlayer, setCurrentPlayer] = useState(1);
+  const [flag, setFlag] = useState(false);
+  const [delGotiFlag, setDelGotiFlag] = useState(false);
 
-    function intialDiceThrow(){
-      let tempColor = "";
-      if (currentPlayer == 1) {
-          tempColor="red";
-      } else if (currentPlayer == 2) {
-        tempColor = "green";
-      } else if (currentPlayer == 3) {
-        tempColor = "orange";
-      } else if (currentPlayer == 4) {
-        tempColor = "blue";
-      } else if (currentPlayer == 5) {
-        tempColor = "yellow";
-      }else{
-        tempColor ="purple";
+  let k = null;
+  let kk = null;
+
+  const handleClick = () => {
+    // k = setInterval(() => {
+    //     setColor((pre) =>
+    //     pre == "black" ? (pre = "purple") : (pre = "black")
+    //     );
+    // }, 100);
+    intialDiceThrow();
+  };
+
+  function intialDiceThrow() {
+    let tempColor = "";
+    if (currentPlayer == 1) {
+      tempColor = "red";
+    } else if (currentPlayer == 2) {
+      tempColor = "green";
+    } else if (currentPlayer == 3) {
+      tempColor = "orange";
+    } else if (currentPlayer == 4) {
+      tempColor = "blue";
+    } else if (currentPlayer == 5) {
+      tempColor = "yellow";
+    } else {
+      tempColor = "purple";
+    }
+
+    setChangeId({ ...changeId, [currentPlayer * 18 - 5]: tempColor });
+    setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+    console.log(currentPlayer);
+  }
+
+  const moveClick = (e) => {
+    let id = parseInt(e.target.id);
+    if (!changeId.hasOwnProperty(id)) return;
+    if(delMove.includes(id + dice)) {
+      setDelGotiFlag(true);
+    }
+    // else {
+    //   setDelGotiFlag(false);
+    // }
+    setCurrentGoti(id);
+    setFlag(true);
+    console.log("f", flag);
+    // setDice(parseInt(Math.random()*10));
+  };
+
+  useEffect(() => {
+    if (flag) {
+      let currentColor = changeId[currentGoti];
+      // for last move inside the last row 
+      if (currentColor == "red" && currentGoti == 6) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      } else if (currentColor == "green" && currentGoti == 24) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      } else if (currentColor == "orange" && currentGoti == 42) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      } else if (currentColor == "blue" && currentGoti == 60) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      } else if (currentColor == "yellow" && currentGoti == 78) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      } else if (currentColor == "purple" && currentGoti == 90) {
+        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
       }
-      
-      setChangeId({ ...changeId, [(currentPlayer * 18) - 5]:tempColor });
-      setCurrentPlayer(currentPlayer ==6? 1: currentPlayer+1);
-      console.log(currentPlayer);
-    }
-     
-    const moveClick = (e)=>{
-        let id = parseInt(e.target.id);
-        if(!changeId.hasOwnProperty(id)) return;
-        setCurrentGoti(id);
-        setFlag(true);
-        // setDice(parseInt(Math.random()*10));
-    }
-
-    useEffect(()=>{
-        if(flag){
-            let currentColor = changeId[currentGoti];
-            kk = setInterval(() => {
-              setChangeId(pre=>(
-                  delete pre[currentGoti],
-                  {...pre, [[24,42,60,78,96,6].includes(currentGoti)?currentGoti+6:currentGoti==107?0:currentGoti+1]:currentColor}
-                )
-              );
-              setCurrentGoti((pre) => [24, 42, 60, 78, 96, 6].includes(pre) ? pre+6 : pre==107?pre=0:pre+1); // incrementing for move
-              setDice((pre) => pre - 1);
-            }, 100);
-            if(dice==0){
-              setFlag(false);
-              setDice(5);
+      kk = setInterval(() => {
+        setChangeId(
+          (pre) => (
+            delete pre[currentGoti],
+            {
+              ...pre,
+              [avoidMove.includes(currentGoti)
+                ?
+                currentGoti + 6
+                : 
+                  currentGoti === 107
+                  ? 0
+                  : 
+                    delGotiFlag && delMove.includes(currentGoti+1) 
+                    ?
+                    currentColor
+                    :
+                    currentGoti + 1
+              ]
+              : 
+              delGotiFlag && delMove.includes(currentGoti+1) 
+                ? pre[currentColor]+1
+                :currentColor,
             }
-            
-        }else{
-            clearInterval(kk);
-        }
-        return ()=>clearInterval(kk);
-    },[dice, changeId, flag, currentPlayer])
-    
-    console.log(changeId);
+          )
+        );
+        // incrementing for move
+        setCurrentGoti((pre) =>
+          avoidMove.includes(pre) ? pre + 6 : pre === 107 ? pre = 0 : pre + 1
+        );
+        setDice((pre) => pre - 1);
+      }, 50);
 
+      if (dice === 0) {
+        setFlag(false);
+        setDice(9);
+      }
 
+    } else {
+      clearInterval(kk);
+    }
+    return () => clearInterval(kk);
+  }, [dice, changeId, flag, currentPlayer, delGotiFlag]);
+
+  console.log(changeId, avoidMove, delMove, currentGoti, dice);
+  console.log("goti", delGotiFlag);
+  console.log("dice", flag);
 
   return (
     <div>
-    <svg width="800" height="800">
-      <style>
-        {`
+      <svg width="800" height="800">
+        <style>
+          {`
           .triangle {
             fill: none;
             stroke: black;
@@ -264,50 +316,64 @@ const TriangleSVG = () => {
 
 
         `}
-      </style>
-            
+        </style>
 
-          {/* rows and columns for move */}
-      {[...Array(1)].map((_, row) => (
-        [...Array(108)].map((_, col) => (
-            <polygon key={col}
+        {/* rows and columns for move */}
+        {[...Array(1)].map((_, row) =>
+          [...Array(108)].map((_, col) => (
+            <polygon
+              key={col}
               points={points[col]}
-              
-              className = "cell"
+              className="cell"
               id={col}
               onClick={moveClick}
-              style={{ stroke: '#000', strokeWidth: 1, fill: changeId.hasOwnProperty(col)?changeId[col]:'white'}}
+              style={{
+                stroke: "#000",
+                strokeWidth: 1,
+                fill: changeId.hasOwnProperty(col) ? changeId[col] : "white",
+              }}
             />
-        ))
-      ))}
+          ))
+        )}
 
-            {/* gotis for move */}
-      {
+        {/* gotis for move */}
+        {}
+        {/* purple */}
+        <polygon
+          className="triangle purple"
+          points="10,250 250,250, 130,80"
+          onClick={handleClick}
+        />
+        <polygon className="triangle white" points="60,230 206,230, 130,125" />
+        <polygon className="triangle" points="250,250 320,200 195,35 130,80" />
 
-      }
-      {/* purple */}
-      <polygon className="triangle purple" points="10,250 250,250, 130,80" onClick={handleClick}/>
-      <polygon className="triangle white" points="60,230 206,230, 130,125" />
-      <polygon className="triangle" points="250,250 320,200 195,35 130,80"/>
+        {/* red */}
+        <polygon className="triangle red" points="195,35 435,35 320,200" />
+        <polygon className="triangle white" points="60,230 206,230, 130,125" />
+        <polygon className="triangle" points="320,200 390,250 500,80 435,35" />
 
-      {/* red */}
-      <polygon className="triangle red" points="195,35 435,35 320,200"/>
-      <polygon className="triangle white" points="60,230 206,230, 130,125" />
-      <polygon className="triangle" points="320,200 390,250 500,80 435,35"/>
+        <polygon className="triangle green" points="390,250 630,250 500,80" />
+        <polygon className="triangle" points="10,250 10,330 250,330 250,250" />
 
-      <polygon className="triangle green" points="390,250 630,250 500,80"/>
-      <polygon className="triangle" points="10,250 10,330 250,330 250,250"/>
+        <polygon
+          className="triangle"
+          points="390,250 390,330 630,330 630,250"
+        />
+        <polygon className="triangle yellow" points="10,330 130,500 250,330" />
 
-      <polygon className="triangle" points="390,250 390,330 630,330 630,250"/>
-      <polygon className="triangle yellow" points="10,330 130,500 250,330"/>
+        <polygon
+          className="triangle"
+          points="130,500 195,560 320,380 250,330"
+        />
+        <polygon className="triangle blue" points="195,560 435,560 320,380" />
 
-      <polygon className="triangle" points="130,500 195,560 320,380 250,330"/>
-      <polygon className="triangle blue" points="195,560 435,560 320,380"/>
-
-      <polygon className="triangle" points="435,560 500,500 390,330 320,380"/>
-      <polygon className="triangle orange" points="500,500 630,330 390,330"/>
-
-    </svg>
+        <polygon
+          className="triangle"
+          points="435,560 500,500 390,330 320,380"
+        />
+        <polygon className="triangle orange" points="500,500 630,330 390,330" />
+      </svg>
+      <button onClick={()=>setDice(6)}>1</button>
     </div>
   );
 };
