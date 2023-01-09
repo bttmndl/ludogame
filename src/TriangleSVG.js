@@ -153,12 +153,14 @@ const points = [
 
 const avoidMove = [24, 42, 60, 78, 96, 6];
 const delMove = [12,30,48,66,84,102];
+let currentPlayerCount = [0,0,0,0,0,0];
 const changeIdIntialState = {"red":0, "blue":0, "green":0, "yellow":0, "orange":0, "purple":0};
+const ocupied = new Array(108).fill(false);
 
 const TriangleSVG = () => {
   const [color, setColor] = useState("purple");
   const [changeId, setChangeId] = useState(changeIdIntialState);
-  // const [avoidMove, setAvoidMove] = useState([24, 42, 60, 78, 96, 6]);
+  //const [avoidMove, setAvoidMove] = useState([24, 42, 60, 78, 96, 6]);
   const [dice, setDice] = useState(4);
   const [currentGoti, setCurrentGoti] = useState();
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -177,29 +179,57 @@ const TriangleSVG = () => {
     intialDiceThrow();
   };
 
-  function intialDiceThrow() {
-    let tempColor = "";
-    if (currentPlayer == 1) {
-      tempColor = "red";
-    } else if (currentPlayer == 2) {
-      tempColor = "green";
-    } else if (currentPlayer == 3) {
-      tempColor = "orange";
-    } else if (currentPlayer == 4) {
-      tempColor = "blue";
-    } else if (currentPlayer == 5) {
-      tempColor = "yellow";
-    } else {
-      tempColor = "purple";
+  //checking for the current goti in del cell or not
+  function delRowCheck(delcolor, curGotiindex){
+    if (delcolor == "red" && curGotiindex == 6) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
+    } else if (delcolor == "green" && curGotiindex == 24) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
+    } else if (delcolor == "orange" && curGotiindex == 42) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
+    } else if (delcolor == "blue" && curGotiindex == 60) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
+    } else if (delcolor == "yellow" && curGotiindex == 78) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
+    } else if (delcolor == "purple" && curGotiindex == 90) {
+      avoidMove.splice(avoidMove.indexOf(curGotiindex), 1);
     }
+  }
 
-    setChangeId({ ...changeId, [currentPlayer * 18 - 5]: tempColor });
+  function alreadyOcupied(curGotiindex){
+
+  }
+
+  function checkCurrentColor(){
+    switch (currentPlayer) {
+      case 1:
+        return "red";
+      case 2:
+        return "green";
+      case 3:
+        return "orange";
+      case 4:
+        return "blue";
+      case 5:
+        return "yellow";
+      default :
+        return "purple"
+    }
+  }
+
+  function intialDiceThrow() {
+    let idx = currentPlayer * 18 - 5;
+    //let current_id = ""+idx+"-"+checkCurrentColor();
+    //console.log(current_id);
+    ocupied[idx] = true;
+    setChangeId({ ...changeId, [idx]: checkCurrentColor() });
     setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
-    console.log(currentPlayer);
+    //console.log(changeId);
   }
 
   const moveClick = (e) => {
     let id = parseInt(e.target.id);
+    //let constructId = "" + id + "-" + checkCurrentColor();
     if (!changeId.hasOwnProperty(id)) return;
     if(delMove.includes(id + dice)) {
       setDelGotiFlag(true);
@@ -209,6 +239,8 @@ const TriangleSVG = () => {
     // }
     setCurrentGoti(id);
     setFlag(true);
+    ocupied[id] = false;
+    ocupied[id+dice] = true;
     console.log("f", flag);
     // setDice(parseInt(Math.random()*10));
   };
@@ -216,38 +248,33 @@ const TriangleSVG = () => {
   useEffect(() => {
     if (flag) {
       let currentColor = changeId[currentGoti];
-      // for last move inside the last row 
-      if (currentColor == "red" && currentGoti == 6) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
-      } else if (currentColor == "green" && currentGoti == 24) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
-      } else if (currentColor == "orange" && currentGoti == 42) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
-      } else if (currentColor == "blue" && currentGoti == 60) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
-      } else if (currentColor == "yellow" && currentGoti == 78) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
-      } else if (currentColor == "purple" && currentGoti == 90) {
-        avoidMove.splice(avoidMove.indexOf(currentGoti), 1);
+      // for check of last move inside the last row 
+      let ok =false;
+      let okk =false;
+      delRowCheck(currentColor, currentGoti);
+      if(changeId.hasOwnProperty(avoidMove.includes(currentGoti) ? currentGoti+6 : currentGoti+1)){
+        ok =true;
+        if(avoidMove.includes(currentGoti) && changeId.hasOwnProperty(currentGoti+6)) okk =true;
       }
+      //for checking the cell is already ocupied or not
+      //alreadyOcupied(currentGoti);
       kk = setInterval(() => {
         setChangeId(
           (pre) => (
             delete pre[currentGoti],
             {
               ...pre,
-              [avoidMove.includes(currentGoti)
+              [avoidMove.includes(ok && okk ? currentGoti : ok ? currentGoti+1: currentGoti)
                 ?
-                currentGoti + 6
+                  currentGoti + (ok ? 7 : 6)
                 : 
-                  currentGoti === 107
-                  ? 0
-                  : 
-                    delGotiFlag && delMove.includes(currentGoti+1) 
-                    ?
-                    currentColor
-                    :
-                    currentGoti + 1
+                  currentGoti + (ok?1:0) === 107
+                    ? (ok ? 1 : 0)
+                    : delGotiFlag && delMove.includes(currentGoti+1) 
+                      ?
+                      currentColor
+                      :
+                      currentGoti + (ok ? 2 : 1)
               ]
               : 
               delGotiFlag && delMove.includes(currentGoti+1) 
@@ -257,15 +284,17 @@ const TriangleSVG = () => {
           )
         );
         // incrementing for move
+         
         setCurrentGoti((pre) =>
-          avoidMove.includes(pre) ? pre + 6 : pre === 107 ? pre = 0 : pre + 1
+          avoidMove.includes(ok&&okk?pre:ok?pre+1:pre) ? pre + (ok?7:6) : pre === 107 ? pre = (ok?1:0) : pre + (ok?2:1)
         );
-        setDice((pre) => pre - 1);
-      }, 50);
+        
+        setDice((pre) => ok ? pre-2 : pre-1);
+      }, 30);
 
       if (dice === 0) {
         setFlag(false);
-        setDice(9);
+        setDice(5);
       }
 
     } else {
@@ -373,7 +402,7 @@ const TriangleSVG = () => {
         />
         <polygon className="triangle orange" points="500,500 630,330 390,330" />
       </svg>
-      <button onClick={()=>setDice(6)}>1</button>
+      <button onClick={()=>setDice(3)}>1</button>
     </div>
   );
 };
