@@ -252,7 +252,7 @@ const TriangleSVG = () => {
       let ok =false;
       let okk =false;
       delRowCheck(currentColor, currentGoti);
-      if(changeId.hasOwnProperty(avoidMove.includes(currentGoti) ? currentGoti+6 : currentGoti+1)){
+      if(changeId.hasOwnProperty(avoidMove.includes(currentGoti) ? currentGoti+6 : currentGoti===107 ? 0 : currentGoti+1)){
         ok =true;
         if(avoidMove.includes(currentGoti) && changeId.hasOwnProperty(currentGoti+6)) okk =true;
       }
@@ -268,13 +268,12 @@ const TriangleSVG = () => {
                 ?
                   currentGoti + (ok ? 7 : 6)
                 : 
-                  currentGoti + (ok?1:0) === 107
-                    ? (ok ? 1 : 0)
-                    : delGotiFlag && delMove.includes(currentGoti+1) 
-                      ?
-                      currentColor
-                      :
-                      currentGoti + (ok ? 2 : 1)
+                  currentGoti===106 && ok ? 0 :currentGoti ===107 && ok ? 1 : currentGoti==107 ? 0 :
+                    delGotiFlag && delMove.includes(currentGoti+1) 
+                    ?
+                    currentColor
+                    :
+                    currentGoti + (ok ? 2 : 1)
               ]
               : 
               delGotiFlag && delMove.includes(currentGoti+1) 
