@@ -1,6 +1,6 @@
 import React, { useState,useEffect } from "react";
 import moveSound from './assets/move.wav'
-// import Dice from './Dice';
+import Dice from './Dice';
 
 const gotiPoints = [
   [
@@ -170,6 +170,16 @@ const points = [
   
 ];
 
+const trianglePoints = [
+  "195,35 435,35 320,200",
+  "390,250 630,250 500,80",
+  "500,500 630,330 390,330",
+  "195,560 435,560 320,380",
+  "10,330 130,500 250,330",
+  "10,250 250,250, 130,80"
+]
+
+//const colorArray = ["red", "green", "orange", "blue", "yellow", "purple"];
 const avoidMoveCopy = [6, 24, 42, 60, 78, 96];
 const delMove = [12, 30, 48, 66, 84, 102];
 let currentPlayerCount = [0,0,0,0,0,0];
@@ -179,14 +189,15 @@ let retainFlag = false;
 
 
 const TriangleSVG = () => {
-  const [color, setColor] = useState("purple");
   const [changeId, setChangeId] = useState({});
   const [avoidMove, setAvoidMove] = useState();
   const [dice, setDice] = useState(4);
+  const [colorArray, setColorArray] = useState(["red", "green", "orange", "blue", "yellow", "purple"])
   const [currentGoti, setCurrentGoti] = useState();
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [flag, setFlag] = useState(false);
   const [delGotiFlag, setDelGotiFlag] = useState(false);
+  const [animaFlag, setAnimaFlag] = useState(true);
 
   let k = null;
   let kk = null;
@@ -214,11 +225,7 @@ const TriangleSVG = () => {
   }
 
   function handleClick(){
-    // k = setInterval(() => {
-    //     setColor((pre) =>
-    //     pre == "black" ? (pre = "purple") : (pre = "black")
-    //     );
-    // }, 100);
+    setAnimaFlag(false)
     if(currentPlayerCount[currentPlayer-1]==4) return;
     currentPlayerCount[currentPlayer-1]++;
     intialDiceThrow();
@@ -282,10 +289,10 @@ const TriangleSVG = () => {
   function moveClick(e){
     let id = parseInt(e.target.id);
     //let id = Number(i);
-    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
-    
-    
-    if(delMove.includes(id + dice)) {
+    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor())
+      return;
+
+    if (delMove.includes(id + dice)) {
       setDelGotiFlag(true);
     }
     // else {
@@ -294,14 +301,14 @@ const TriangleSVG = () => {
     setCurrentGoti(id);
     setFlag(true);
     //checking eating moves
-    if(changeId.hasOwnProperty(id+dice)){
-      if(changeId[id+dice]!==checkCurrentColor()){
+    if (changeId.hasOwnProperty(id + dice)) {
+      if (changeId[id + dice] !== checkCurrentColor()) {
         eatFlag = true;
         currentPlayerCount[checkIndexColor(changeId[id + dice])]--;
-      }else{
+      } else {
         retainFlag = true;
       }
-    }else{
+    } else {
       eatFlag = false;
       retainFlag = false;
     }
@@ -310,9 +317,9 @@ const TriangleSVG = () => {
     let temp = [...avoidMoveCopy];
     temp.splice(currentPlayer - 1, 1);
     setAvoidMove(temp);
-
     setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
-
+    setAnimaFlag(false);
+    setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
   }
 
   useEffect(() => {
@@ -366,8 +373,9 @@ const TriangleSVG = () => {
 
       if (dice === 0) {
         setFlag(false);
-        setDice(pre => pre = Math.floor((Math.random()*6)));
-        
+        setDice((pre) => (pre = Math.floor(Math.random() * 6)));
+        setAnimaFlag(true);
+
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -379,18 +387,31 @@ const TriangleSVG = () => {
         // let key = Math.floor(Math.random()*arr.length);
         // moveClick(key);
       }
-
     } else {
       clearInterval(kk);
     }
-    return () => clearInterval(kk);
-  }, [dice, changeId, flag, currentPlayer, delGotiFlag]);
+
+    if(animaFlag){
+      k = setInterval(() => {  
+        let temp = [...colorArray];  
+        temp[currentPlayer-1] =temp[currentPlayer-1] === "black" ? temp[currentPlayer-1]=checkCurrentColor() : temp[currentPlayer-1]="black";
+        setColorArray(pre=>pre=[...temp]);
+      }, 200);
+      
+    }else{
+      clearInterval(k);
+    }
+    return () => {
+      clearInterval(kk);
+      clearInterval(k);
+    }
+  }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray]);
   
   console.log(changeId, avoidMove, delMove, currentGoti,currentPlayerCount);
   console.log("cp", currentPlayer);
   console.log("goti", delGotiFlag);
   console.log("dice", dice);
-  console.log(gotiPoints[0][0][0], gotiPoints[0][0][1]);
+  console.log("caaray", colorArray);
   return (
     <div>
       <svg width="800" height="800">
@@ -403,7 +424,7 @@ const TriangleSVG = () => {
           }
           
           .purple {
-            fill: ${color};
+            fill: purple;
           }
           .red {
             fill: red;
@@ -441,16 +462,36 @@ const TriangleSVG = () => {
               style={{
                 stroke: "#000",
                 strokeWidth: 1,
-                fill: changeId.hasOwnProperty(col) ? changeId[col] : col===((Math.floor((col+1)/18)+1)*18)-5  || (col > (Math.floor((col+1)/18)*18)+6 && col < (Math.floor((col+1)/18)*18)+12) ? "light"+numberWiseColor(Math.floor((col+1)/18)): "white",
+                fill: changeId.hasOwnProperty(col)
+                  ? changeId[col]
+                  : col > Math.floor((col + 1) / 18) * 18 + 6 &&
+                    col < Math.floor((col + 1) / 18) * 18 + 12
+                  ? numberWiseColor(Math.floor((col + 1) / 18))
+                  : "white",
               }}
             />
           ))
         )}
 
+        {/* triangle for every cell */}
+        {
+          [...Array(6)].map((_, col) =>(
+            <polygon
+              key={col*1000}
+              points={trianglePoints[col]}
+              className="triangle red"
+              style ={{
+                fill: colorArray[col],
+              }}
+            />
+          ))
+        }
+
+        {/* col===((Math.floor((col+1)/18)+1)*18)-5  ||  */}
         {/* gotis for move */}
 
         {/* red */}
-        <polygon className="triangle red" points="195,35 435,35 320,200" />
+        
         <polygon className="triangle white" points="250,60 390,60, 320,200" />
         <polygon className="triangle" points="320,200 390,250 500,80 435,35" />
         <polygon
@@ -459,7 +500,7 @@ const TriangleSVG = () => {
         />
 
         {/* green */}
-        <polygon className="triangle green" points="390,250 630,250 500,80" />
+        
         <polygon className="triangle white" points="500,120 590,230, 390,250" />
         <polygon className="triangle" points="10,250 10,330 250,330 250,250" />
         <polygon
@@ -468,7 +509,7 @@ const TriangleSVG = () => {
         />
 
         {/* orange */}
-        <polygon className="triangle orange" points="500,500 630,330 390,330" />
+        
         <polygon className="triangle white" points="500,460 585,350, 390,330" />
         <polygon
           className="triangle"
@@ -480,7 +521,7 @@ const TriangleSVG = () => {
         />
 
         {/* blue */}
-        <polygon className="triangle blue" points="195,560 435,560 320,380" />
+        
         <polygon className="triangle white" points="245,535 385,535, 320,380" />
         <polygon
           className="triangle"
@@ -492,7 +533,7 @@ const TriangleSVG = () => {
         />
 
         {/* Yellow */}
-        <polygon className="triangle yellow" points="10,330 130,500 250,330" />
+        
         <polygon className="triangle white" points="50,350 130,460, 250,330" />
         <polygon
           className="triangle"
@@ -504,11 +545,6 @@ const TriangleSVG = () => {
         />
 
         {/* purple */}
-        <polygon
-          className="triangle purple"
-          points="10,250 250,250, 130,80"
-          onClick={handleClick}
-        />
         <polygon className="triangle white" points="60,230 250,250, 130,125" />
         <polygon className="triangle" points="250,250 320,200 195,35 130,80" />
         <polygon
@@ -521,10 +557,10 @@ const TriangleSVG = () => {
         {[...Array(6)].map((_, row) =>
           [...Array(4)].map((_, col) => (
             <circle
-              key={""+row+"-"+col}
+              key={"" + row + "-" + col}
               cx={gotiPoints[row][col][0]}
               cy={gotiPoints[row][col][1]}
-              r = "15"
+              r="15"
               style={{
                 stroke: "#000",
                 strokeWidth: 1,
@@ -533,10 +569,10 @@ const TriangleSVG = () => {
             />
           ))
         )}
-
-
       </svg>
-      {/* <Dice /> */}
+      <h1>{dice}</h1>
+      <Dice />
+
       <button onClick={handleClick}>start</button>
     </div>
   );
