@@ -1,6 +1,6 @@
 import React, { useState,useEffect } from "react";
 import moveSound from './assets/move.wav'
-import Dice from './Dice';
+import playerMoveSound from './assets/playerMove.mp3';
 
 const gotiPoints = [
   [
@@ -265,50 +265,90 @@ const gotiMovePoints = [
   ["52.9%", "57.2%"],
   ["50.55%", "53.5%"],
   ["48.15%", "49.7%"],
-  ["27.3%", "28.3%"],
+  ["45.9%", "46.1%"],
   //12th row
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
-  ["31.3%", "28.3%"],
-  ["27.3%", "28.3%"],
+  ["54.4%", "66.4%"],
+  ["52.1%", "62.7%"],
+  ["49.8%", "59.2%"],
+  ["47.45%", "55.4%"],
+  ["45.1%", "51.7%"],
+  ["42.8%", "48.1%"],
+  //13th row
+  ["37.5%", "48%"],
+  ["35.1%", "51.5%"],
+  ["32.6%", "55.1%"],
+  ["30.1%", "58.8%"],
+  ["27.57%", "62.5%"],
+  ["24.85%", "66.3%"],
+  //14th row
+  ["22.12%", "64.33%"],
+  ["24.8%", "60.65%"],
+  ["27.3%", "57%"],
+  ["29.75%", "53.3%"],
+  ["32.3%", "49.6%"],
+  ["34.7%", "46.2%"],
+  //15th row
+  ["19.2%", "62%"],
+  ["21.8%", "58.3%"],
+  ["24.3%", "54.6%"],
+  ["26.9%", "51%"],
+  ["29.4%", "47.4%"],
+  ["31.7%", "44.2%"],
+  //16th row
+  ["28.8%", "39.64%"],
+  ["23.7%", "39.64%"],
+  ["18.8%", "39.64%"],
+  ["13.8%", "39.64%"],
+  ["8.75%", "39.64%"],
+  ["3.8%", "39.64%"],
+  //17th row
+  ["3.8%", "36.45%"],
+  ["8.75%", "36.45%"],
+  ["13.8%", "36.45%"],
+  ["18.8%", "36.45%"],
+  ["23.7%", "36.45%"],
+  ["28.8%", "36.45%"],
+  //18th row
+  ["3.8%", "33.1%"],
+  ["8.75%", "33.1%"],
+  ["13.8%", "33.1%"],
+  ["18.8%", "33.1%"],
+  ["23.7%", "33.1%"],
+  ["28.8%", "33.1%"],
+];
+
+const diceDots = [
+  [["39.67%", "36%"]],
+  [
+    ["37.5%", "34.5%"],
+    ["41.8%", "38%"],
+  ],
+  [
+    ["37.3%", "38.3%"],
+    ["39.8%", "36.3%"],
+    ["42.3%", "34.3%"],
+  ],
+  [
+    ["37.8%", "34.5%"],
+    ["41.75%", "34.5%"],
+    ["37.8%", "38%"],
+    ["41.75%", "38%"],
+  ],
+  [
+    ["37.8%", "34.5%"],
+    ["41.75%", "34.5%"],
+    ["39.67%", "36%"],
+    ["37.8%", "38%"],
+    ["41.75%", "38%"],
+  ],
+  [
+    ["37.3%", "35%"],
+    ["39.75%", "35%"],
+    ["42.3%", "35%"],
+    ["37.3%", "37.5%"],
+    ["39.75%", "37.5%"],
+    ["42.3%", "37.5%"],
+  ],
 ];
 
 
@@ -329,14 +369,22 @@ const TriangleSVG = () => {
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [flag, setFlag] = useState(false);
   const [delGotiFlag, setDelGotiFlag] = useState(false);
-  const [animaFlag, setAnimaFlag] = useState(true);
-
+  const [animaFlag, setAnimaFlag] = useState(false);
+  const [currentDiceMove, setCurrentDiceMove] = useState(6);
+  const [showDice, setShowDice]= useState(5);
+  const [showDiceFlag, setShowDiceFlag] = useState(false);
   let k = null;
   let kk = null;
+  let showDiceInterval = null;
 
+  // audio functions
   function playSound(){
     new Audio(moveSound).play();
   }
+  function nextPlayerSound(){
+    new Audio(playerMoveSound).play();
+  }
+
 
   //checking index based on Color
   function checkIndexColor(colorStr){
@@ -355,6 +403,30 @@ const TriangleSVG = () => {
         return 5;
     }
   }
+
+  //dice Click
+  function diceClick(){
+    let newDice =Math.floor(Math.random() * 6);
+    setDice(newDice===0?1:newDice);
+    setShowDiceFlag(true);
+    setTimeout(() => {
+      setShowDiceFlag(false);
+    }, 500);
+    setCurrentDiceMove(newDice===0?1:newDice);
+    //handleClick()
+  }
+  useEffect(()=>{
+    if(showDiceFlag){
+      showDiceInterval = setInterval(()=>{
+        let rollDice = Math.floor(Math.random() * 6);
+        setShowDice(pre => pre=rollDice==0?1:rollDice);
+      },50)
+    }else{
+      clearInterval(showDiceInterval);
+    }
+
+    return ()=>clearInterval(showDiceInterval);
+  },[showDiceFlag, showDice])
 
   function handleClick(){
     setAnimaFlag(false)
@@ -421,8 +493,7 @@ const TriangleSVG = () => {
   function moveClick(e){
     let id = parseInt(e.target.id);
     //let id = Number(i);
-    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor())
-      return;
+    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
 
     if (delMove.includes(id + dice)) {
       setDelGotiFlag(true);
@@ -505,9 +576,10 @@ const TriangleSVG = () => {
 
       if (dice === 0) {
         setFlag(false);
-        setDice((pre) => (pre = Math.floor(Math.random() * 6)));
         setAnimaFlag(true);
-
+        setTimeout(() => {
+          nextPlayerSound();
+        }, 300);
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -522,13 +594,13 @@ const TriangleSVG = () => {
     } else {
       clearInterval(kk);
     }
-
+    
     if(animaFlag){
       k = setInterval(() => {  
         let temp = [...colorArray];  
         temp[currentPlayer-1] =temp[currentPlayer-1] === "black" ? temp[currentPlayer-1]=checkCurrentColor() : temp[currentPlayer-1]="black";
         setColorArray(pre=>pre=[...temp]);
-      }, 200);
+      }, 300);
       
     }else{
       clearInterval(k);
@@ -537,13 +609,14 @@ const TriangleSVG = () => {
       clearInterval(kk);
       clearInterval(k);
     }
-  }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray]);
+  }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray, currentDiceMove]);
   
   console.log(changeId, avoidMove, delMove, currentGoti,currentPlayerCount);
   console.log("cp", currentPlayer);
   console.log("goti", delGotiFlag);
   console.log("dice", dice);
   console.log("caaray", colorArray);
+  console.log("cdm", currentDiceMove);
   return (
     <div>
       <svg width="800" height="800">
@@ -582,6 +655,18 @@ const TriangleSVG = () => {
         `}
         </style>
 
+        {/* dice */}
+        <polygon
+          points="285,260, 350,260, 350,320, 285,320"
+          onClick={diceClick}
+          style={{
+            stroke: "black",
+            strokeWidth: 1,
+            fill: "white",
+            cursor: "pointer",
+          }}
+        />
+
         {/* columns for move */}
         {[...Array(108)].map((_, col) => (
           <polygon
@@ -590,12 +675,11 @@ const TriangleSVG = () => {
             style={{
               stroke: "#000",
               strokeWidth: 1,
-              fill: changeId.hasOwnProperty(col)
-                ? changeId[col]
-                : col > Math.floor((col + 1) / 18) * 18 + 6 &&
-                  col < Math.floor((col + 1) / 18) * 18 + 12
-                ? numberWiseColor(Math.floor((col + 1) / 18))
-                : "white",
+              fill:
+                col > Math.floor((col + 1) / 18) * 18 + 6 &&
+                col < Math.floor((col + 1) / 18) * 18 + 12
+                  ? numberWiseColor(Math.floor((col + 1) / 18))
+                  : "white",
             }}
           />
         ))}
@@ -612,30 +696,44 @@ const TriangleSVG = () => {
           />
         ))}
 
+        {/* dice dots */}
+        {[...Array(showDiceFlag?showDice: currentDiceMove)].map((_, col) => (
+          <circle
+            key={"" + col + "-" + col + "-" + col + col}
+            className="cell"
+            cx={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][0]}
+            cy={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][1]}
+            r="5"
+            style={{
+              stroke: "black",
+              strokeWidth: 1,
+              fill: "black",
+            }}
+          />
+        ))}
+
         {/* goti move */}
-        {
-          [...Array(108)].map((_, col) => (
-            <circle
-              key={"" + col + "-" + col + "-" + col}
-              className="cell"
-              id={col}
-              onClick={moveClick}
-              cx={gotiMovePoints[col][0]}
-              cy={gotiMovePoints[col][1]}
-              r="11.5"
-              style={{
-                stroke: "#000",
-                strokeWidth: 0.7,
-                fill: changeId.hasOwnProperty(col)
-                  ? changeId[col]
-                  : col > Math.floor((col + 1) / 18) * 18 + 6 &&
-                    col < Math.floor((col + 1) / 18) * 18 + 12
-                  ? numberWiseColor(Math.floor((col + 1) / 18))
-                  : "white",
-              }}
-            />
-          ))
-        }
+        {[...Array(108)].map((_, col) => (
+          <circle
+            key={"" + col + "-" + col + "-" + col}
+            className="cell"
+            id={col}
+            onClick={moveClick}
+            cx={gotiMovePoints[col][0]}
+            cy={gotiMovePoints[col][1]}
+            r="11.5"
+            style={{
+              stroke: changeId.hasOwnProperty(col) ? "black" : "none",
+              strokeWidth: 0.7,
+              fill: changeId.hasOwnProperty(col)
+                ? changeId[col]
+                : col > Math.floor((col + 1) / 18) * 18 + 6 &&
+                  col < Math.floor((col + 1) / 18) * 18 + 12
+                ? numberWiseColor(Math.floor((col + 1) / 18))
+                : "white",
+            }}
+          />
+        ))}
 
         {/* col===((Math.floor((col+1)/18)+1)*18)-5  ||  */}
         {/* gotis for move */}
@@ -708,12 +806,14 @@ const TriangleSVG = () => {
           [...Array(4)].map((_, col) => (
             <circle
               key={"" + row + "-" + col}
+              onClick={handleClick}
               cx={gotiPoints[row][col][0]}
               cy={gotiPoints[row][col][1]}
               r="11.5"
               style={{
                 stroke: "#000",
                 strokeWidth: 1,
+                cursor:"pointer",
                 fill: numberWiseColor(row),
               }}
             />
@@ -732,10 +832,7 @@ const TriangleSVG = () => {
           />
         ))}
       </svg>
-      <h1>{dice}</h1>
-      <Dice />
-
-      <button onClick={handleClick}>start</button>
+      
     </div>
   );
 };
