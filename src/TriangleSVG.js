@@ -1,6 +1,7 @@
 import React, { useState,useEffect } from "react";
 import moveSound from './assets/move.wav'
 import playerMoveSound from './assets/playerMove.mp3';
+import diceThrowAudio from './assets/diceThrow.mp3';
 
 const gotiPoints = [
   [
@@ -369,10 +370,13 @@ const TriangleSVG = () => {
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [flag, setFlag] = useState(false);
   const [delGotiFlag, setDelGotiFlag] = useState(false);
-  const [animaFlag, setAnimaFlag] = useState(false);
+  const [animaFlag, setAnimaFlag] = useState(true);
   const [currentDiceMove, setCurrentDiceMove] = useState(6);
   const [showDice, setShowDice]= useState(5);
   const [showDiceFlag, setShowDiceFlag] = useState(false);
+  const [checkDicebeforeMove, setCheckDiceBeforeMove] = useState(false);
+  const [dice6Flag, setDice6Flag] = useState(false);
+
   let k = null;
   let kk = null;
   let showDiceInterval = null;
@@ -383,6 +387,9 @@ const TriangleSVG = () => {
   }
   function nextPlayerSound(){
     new Audio(playerMoveSound).play();
+  }
+  function diceThrowSound(){
+    new Audio(diceThrowAudio).play();
   }
 
 
@@ -406,30 +413,67 @@ const TriangleSVG = () => {
 
   //dice Click
   function diceClick(){
-    let newDice =Math.floor(Math.random() * 6);
-    setDice(newDice===0?1:newDice);
+    if(checkDicebeforeMove) return;
+    diceThrowSound();
+    let newDice =Math.floor(Math.random() * 6)+1;
+    setDice(newDice);
     setShowDiceFlag(true);
     setTimeout(() => {
       setShowDiceFlag(false);
-    }, 500);
-    setCurrentDiceMove(newDice===0?1:newDice);
-    //handleClick()
+    }, 1000);
+    setCurrentDiceMove(newDice);
+    setCheckDiceBeforeMove(true);
+    //if player turn but no possible move or player turn remain same 
+    // if(dice===6){
+    //   setDice6Flag(true);
+    //   setCheckDiceBeforeMove(true);
+    // }
+    // else{
+    //   setDice6Flag(false);
+    //   setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+    // }
+    // else{
+    //   setDice6Flag(false);
+    //   //if there is no outside current goti for current player..
+    //   //next player turn should be automatic
+    //   let tempFlag = false;
+    //   for(let key in changeId){
+    //     if(changeId[key]===checkCurrentColor()){
+    //       tempFlag = true;
+    //       break;
+    //     }
+    //   }
+    //   if(!tempFlag){
+    //     setAnimaFlag(true);
+    //     setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+    //     return;
+    //   }
+    // }
+    
+
   }
   useEffect(()=>{
     if(showDiceFlag){
       showDiceInterval = setInterval(()=>{
-        let rollDice = Math.floor(Math.random() * 6);
-        setShowDice(pre => pre=rollDice==0?1:rollDice);
+        let rollDice = Math.floor(Math.random() * 6)+1;
+        setShowDice(pre => pre=rollDice);
       },50)
     }else{
       clearInterval(showDiceInterval);
     }
 
     return ()=>clearInterval(showDiceInterval);
-  },[showDiceFlag, showDice])
+  },[showDiceFlag, showDice, dice6Flag])
 
   function handleClick(){
-    setAnimaFlag(false)
+    if (!checkDicebeforeMove) return;
+    // if(!dice6Flag) {
+    //   return;
+    // }
+    setAnimaFlag(false);
+    // if(dice!==6) {
+    //   return;
+    // }
     if(currentPlayerCount[currentPlayer-1]==4) return;
     currentPlayerCount[currentPlayer-1]++;
     intialDiceThrow();
@@ -485,12 +529,14 @@ const TriangleSVG = () => {
 
   function intialDiceThrow() {
     let idx = currentPlayer * 18 - 5;
-    ocupied[idx] = true;
     setChangeId({ ...changeId, [idx]: checkCurrentColor() });
+    // if(!dice6Flag){
+    // }
     setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
   }
 
   function moveClick(e){
+    if (!checkDicebeforeMove) return;
     let id = parseInt(e.target.id);
     //let id = Number(i);
     if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
@@ -498,9 +544,7 @@ const TriangleSVG = () => {
     if (delMove.includes(id + dice)) {
       setDelGotiFlag(true);
     }
-    // else {
-    //   setDelGotiFlag(false);
-    // }
+
     setCurrentGoti(id);
     setFlag(true);
     //checking eating moves
@@ -520,7 +564,6 @@ const TriangleSVG = () => {
     let temp = [...avoidMoveCopy];
     temp.splice(currentPlayer - 1, 1);
     setAvoidMove(temp);
-    setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
     setAnimaFlag(false);
     setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
   }
@@ -575,11 +618,13 @@ const TriangleSVG = () => {
       }, 300);
 
       if (dice === 0) {
+        setCheckDiceBeforeMove(false);
         setFlag(false);
         setAnimaFlag(true);
         setTimeout(() => {
           nextPlayerSound();
         }, 300);
+        setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -590,12 +635,13 @@ const TriangleSVG = () => {
         // }
         // let key = Math.floor(Math.random()*arr.length);
         // moveClick(key);
+        
       }
     } else {
       clearInterval(kk);
     }
     
-    if(animaFlag){
+    if(animaFlag && !checkDicebeforeMove){
       k = setInterval(() => {  
         let temp = [...colorArray];  
         temp[currentPlayer-1] =temp[currentPlayer-1] === "black" ? temp[currentPlayer-1]=checkCurrentColor() : temp[currentPlayer-1]="black";
@@ -605,18 +651,18 @@ const TriangleSVG = () => {
     }else{
       clearInterval(k);
     }
+
     return () => {
       clearInterval(kk);
       clearInterval(k);
     }
-  }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray, currentDiceMove]);
+  }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray, currentDiceMove, checkDicebeforeMove]);
   
   console.log(changeId, avoidMove, delMove, currentGoti,currentPlayerCount);
   console.log("cp", currentPlayer);
-  console.log("goti", delGotiFlag);
   console.log("dice", dice);
-  console.log("caaray", colorArray);
-  console.log("cdm", currentDiceMove);
+  console.log("dice6Flag", dice6Flag);
+  console.log("cdbm", checkDicebeforeMove);
   return (
     <div>
       <svg width="800" height="800">
@@ -697,17 +743,17 @@ const TriangleSVG = () => {
         ))}
 
         {/* dice dots */}
-        {[...Array(showDiceFlag?showDice: currentDiceMove)].map((_, col) => (
+        {checkDicebeforeMove && [...Array(showDiceFlag?showDice: currentDiceMove)].map((_, col) => (
           <circle
             key={"" + col + "-" + col + "-" + col + col}
             className="cell"
             cx={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][0]}
             cy={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][1]}
-            r="5"
+            r="7"
             style={{
               stroke: "black",
               strokeWidth: 1,
-              fill: "black",
+              fill: numberWiseColor(currentPlayer-1),
             }}
           />
         ))}
