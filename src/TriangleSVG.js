@@ -414,8 +414,8 @@ const TriangleSVG = () => {
   //dice Click
   function diceClick(){
     if(checkDicebeforeMove) return;
-    setIntialStatgeHideDiceFlag(true);
     setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
+    setIntialStatgeHideDiceFlag(true);
     diceThrowSound();
     let newDice =Math.floor(Math.random() * 6)+1;
     setDice(newDice);
@@ -424,7 +424,7 @@ const TriangleSVG = () => {
       setShowDiceFlag(false);
     }, 1000);
     setCurrentDiceMove(newDice);
-
+    
     //if player turn but no possible move or player turn remain same 
     if(newDice===6){
       if (currentPlayerCount[currentPlayer - 1] === 0){
@@ -439,8 +439,8 @@ const TriangleSVG = () => {
       setDice6Flag(false);
       if(currentPlayerCount[currentPlayer-1]===0){
         setCheckDiceBeforeMove(false);
-        setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
         setTimeout(() => {
+          setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
           nextPlayerSound();
           setIntialStatgeHideDiceFlag(false);
         }, 1500);
@@ -470,6 +470,39 @@ const TriangleSVG = () => {
       //   }
       // }
       //moveClick(currentPlayer*18-5);
+  }
+  
+  function moveClick(e){
+    //if(dice6Flag) return;
+    let id = parseInt(e.target.id);
+    //let id = Number(i);
+    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
+
+    if (delMove.includes(id + dice)) {
+      setDelGotiFlag(true);
+    }
+
+    setCurrentGoti(id);
+    setFlag(true);
+    //checking eating moves
+    if (changeId.hasOwnProperty(id + dice)) {
+      if (changeId[id + dice] !== checkCurrentColor()) {
+        eatFlag = true;
+        currentPlayerCount[checkIndexColor(changeId[id + dice])]--;
+      } else {
+        retainFlag = true;
+      }
+    } else {
+      eatFlag = false;
+      retainFlag = false;
+    }
+
+    //removing last entry checkpoint to enter for the current player
+    let temp = [...avoidMoveCopy];
+    temp.splice(currentPlayer - 1, 1);
+    setAvoidMove(temp);
+    setAnimaFlag(false);
+    setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
   }
 
   function autoUpdateGoti(){
@@ -525,38 +558,6 @@ const TriangleSVG = () => {
     }
   }
 
-  function moveClick(e){
-    if(dice6Flag) return;
-    let id = parseInt(e.target.id);
-    //let id = Number(i);
-    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
-
-    if (delMove.includes(id + dice)) {
-      setDelGotiFlag(true);
-    }
-
-    setCurrentGoti(id);
-    setFlag(true);
-    //checking eating moves
-    if (changeId.hasOwnProperty(id + dice)) {
-      if (changeId[id + dice] !== checkCurrentColor()) {
-        eatFlag = true;
-        currentPlayerCount[checkIndexColor(changeId[id + dice])]--;
-      } else {
-        retainFlag = true;
-      }
-    } else {
-      eatFlag = false;
-      retainFlag = false;
-    }
-
-    //removing last entry checkpoint to enter for the current player
-    let temp = [...avoidMoveCopy];
-    temp.splice(currentPlayer - 1, 1);
-    setAvoidMove(temp);
-    setAnimaFlag(false);
-    setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
-  }
 
   useEffect(() => {
     if (flag) {
