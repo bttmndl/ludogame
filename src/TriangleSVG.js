@@ -354,10 +354,19 @@ const diceDots = [
 
 
 const avoidMoveCopy = [6, 24, 42, 60, 78, 96];
+const diceExceptionForEat = [7,8,9,10,11,25,26,27,28,29,43,44,45,46,47,61,62,63,64,65,79,80,81,82,83,97,98,99,100,101];
 const delMove = [12, 30, 48, 66, 84, 102];
 let eatFlag = false;
 let retainFlag = false;
-
+let preventDoubleClickMove = false;
+let playerGotiState = [
+  [false, false, false, false],
+  [false, false, false, false],
+  [false, false, false, false],
+  [false, false, false, false],
+  [false, false, false, false],
+  [false, false, false, false],
+];
 
 const TriangleSVG = () => {
   const [changeId, setChangeId] = useState({});
@@ -376,7 +385,7 @@ const TriangleSVG = () => {
   const [dice6Flag, setDice6Flag] = useState(false);
   const [intialStageHideDiceFlag, setIntialStatgeHideDiceFlag] = useState(true);
   const [currentPlayerCount, setCurrentPlayerCount] = useState([0,0,0,0,0,0]);
-  let [tempChangeId, setTempChangeId] = useState({});
+  const [tempChangeId, setTempChangeId] = useState({});
 
   let k = null;
   let kk = null;
@@ -456,9 +465,22 @@ const TriangleSVG = () => {
     }
   }
   
-  function handleClick(){
-    if (!checkDicebeforeMove) return;
-    if(!dice6Flag) return;
+  function handleClick(e){
+    if (!checkDicebeforeMove || !dice6Flag) return;
+
+    let idArray = e.target.id.split("-");
+    let idArrayRow = parseInt(idArray[0]);
+    let idArrayCol = parseInt(idArray[1]);
+
+    //checking for wrong player click
+    if(idArrayRow!==currentPlayer-1) return;
+
+    //checking for correct player but wrong goti open move
+    if(playerGotiState[idArrayRow][idArrayCol]===true) return;
+
+    // changing the state to true of the goti
+    playerGotiState[idArrayRow][idArrayCol] = true;
+
     setAnimaFlag(false);
     
     if(currentPlayerCount[currentPlayer-1]==4) return;
@@ -479,9 +501,24 @@ const TriangleSVG = () => {
   }
   
   function moveClick(e){
+    //setting all the changId state to prevoius if any changes happen
+    let temChangeId = {...changeId};
+    for(let key in temChangeId){
+      if(temChangeId[key]==="black"){
+        temChangeId[key] = checkCurrentColor();
+      }
+    }
+    setChangeId({...temChangeId});
+    
     let id = parseInt(e.target.id);
     //let id = Number(i);
     if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
+    
+    //for preventing doubleclick
+    if(preventDoubleClickMove) return;
+    preventDoubleClickMove = true;
+
+    
 
     if (delMove.includes(id + dice)) {
       setDelGotiFlag(true);
@@ -489,14 +526,27 @@ const TriangleSVG = () => {
     
     setCurrentGoti(id);
     setFlag(true);
+
     //checking eating moves
-    if (changeId.hasOwnProperty(id + dice)) {
-      if (changeId[id + dice] !== checkCurrentColor()) {
+    let checkDiceIndexafterMove = id + dice;
+    if(diceExceptionForEat.includes(checkDiceIndexafterMove)){
+      checkDiceIndexafterMove += 5;
+    }else if(checkDiceIndexafterMove >107){
+      checkDiceIndexafterMove -= 108;
+    }
+
+    if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
+      if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
         eatFlag = true;
 
         let temp = [...currentPlayerCount];
-        temp[checkIndexColor(changeId[id + dice])]--;
+        temp[checkIndexColor(changeId[checkDiceIndexafterMove])]--;
         setCurrentPlayerCount([...temp]);
+
+        setTimeout(() => {
+          let findIndex = playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])].indexOf(true);
+          playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])][findIndex] = false;
+        }, 1600);
       } else {
         retainFlag = true;
       }
@@ -514,6 +564,9 @@ const TriangleSVG = () => {
   }
 
   function autoUpdateGoti(){
+    // changing the state to true of the goti
+    playerGotiState[currentPlayer-1][0] = true;
+
     currentPlayerCount[currentPlayer - 1]++;
     let idx = currentPlayer * 18 - 5;
     setChangeId({ ...changeId, [idx]: checkCurrentColor() });
@@ -522,7 +575,7 @@ const TriangleSVG = () => {
   useEffect(()=>{
     if(showDiceFlag){
       showDiceInterval = setInterval(()=>{
-        let rollDice = Math.floor(Math.random() * 6)+1;
+        let rollDice = Math.floor(Math.random() * 6) + 1;
         setShowDice(pre => pre=rollDice);
       },50)
     }else{
@@ -618,10 +671,11 @@ const TriangleSVG = () => {
         setCurrentGoti(pre =>pre= avoidMove.includes(pre) ? pre+6 : pre===107 ? 0 : pre+1);
         //decrementing dice
         setDice(pre => pre-1);
-      }, 300);
+      }, 200);
 
 
       if (dice === 0) {
+        preventDoubleClickMove = false;
         setCheckDiceBeforeMove(false);
         setIntialStatgeHideDiceFlag(false);
         setFlag(false);
@@ -686,6 +740,9 @@ const TriangleSVG = () => {
   console.log("dice6Flag", dice6Flag);
   console.log("cdbm", checkDicebeforeMove);
   console.log(tempChangeId);
+  console.log(playerGotiState);
+  console.log("pv",preventDoubleClickMove);
+
   return (
     <div>
       <svg width="800" height="800">
@@ -740,7 +797,8 @@ const TriangleSVG = () => {
         {[...Array(108)].map((_, col) => (
           <polygon
             key={col}
-            onClick = {handleClick}
+            id={col}
+            onClick = {moveClick}
             points={points[col]}
             style={{
               stroke: "#000",
@@ -877,6 +935,7 @@ const TriangleSVG = () => {
           [...Array(4)].map((_, col) => (
             <circle
               key={"" + row + "-" + col}
+              id={row+"-"+col}
               onClick={handleClick}
               cx={gotiPoints[row][col][0]}
               cy={gotiPoints[row][col][1]}
@@ -885,7 +944,7 @@ const TriangleSVG = () => {
                 stroke: "#000",
                 strokeWidth: 1,
                 cursor:"pointer",
-                fill: numberWiseColor(row),
+                fill: playerGotiState[row][col] ? "white" : numberWiseColor(row),
               }}
             />
           ))
