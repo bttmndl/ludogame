@@ -368,6 +368,9 @@ let playerGotiState = [
   [false, false, false, false],
 ];
 
+// let gotiMoveBlinkTimer = 100;
+// let gotiMoveBlinkcounter = 0;
+
 const TriangleSVG = () => {
   const [changeId, setChangeId] = useState({});
   const [avoidMove, setAvoidMove] = useState();
@@ -386,6 +389,8 @@ const TriangleSVG = () => {
   const [intialStageHideDiceFlag, setIntialStatgeHideDiceFlag] = useState(true);
   const [currentPlayerCount, setCurrentPlayerCount] = useState([0,0,0,0,0,0]);
   const [tempChangeId, setTempChangeId] = useState({});
+  const [gotiMoveBlinkTimer, setgotiMoveBlinkTimer] = useState(50);
+  const [gotiMoveBlinkcounter, setgotiMoveBlinkcounter] = useState(0);
 
   let k = null;
   let kk = null;
@@ -509,7 +514,7 @@ const TriangleSVG = () => {
       }
     }
     setChangeId({...temChangeId});
-    
+
     let id = parseInt(e.target.id);
     //let id = Number(i);
     if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
@@ -518,15 +523,10 @@ const TriangleSVG = () => {
     if(preventDoubleClickMove) return;
     preventDoubleClickMove = true;
 
+    //reseting goti blinck state
+    setgotiMoveBlinkTimer(50);
+    setgotiMoveBlinkcounter(0);
     
-
-    if (delMove.includes(id + dice)) {
-      setDelGotiFlag(true);
-    }
-    
-    setCurrentGoti(id);
-    setFlag(true);
-
     //checking eating moves
     let checkDiceIndexafterMove = id + dice;
     if(diceExceptionForEat.includes(checkDiceIndexafterMove)){
@@ -534,6 +534,14 @@ const TriangleSVG = () => {
     }else if(checkDiceIndexafterMove >107){
       checkDiceIndexafterMove -= 108;
     }
+
+    if (delMove.includes(checkDiceIndexafterMove)) {
+      setDelGotiFlag(true);
+    }
+    
+    setCurrentGoti(id);
+    setFlag(true);
+
 
     if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
       if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
@@ -722,7 +730,14 @@ const TriangleSVG = () => {
           }
         }
         setChangeId(pre=>pre = {...pre, ...temp});
-      },100)
+        setgotiMoveBlinkcounter(pre=>pre+1);
+        if(gotiMoveBlinkcounter===5){
+          setgotiMoveBlinkTimer(pre=>pre=1500);
+          setgotiMoveBlinkcounter(pre=>pre=0);
+        }else{
+          setgotiMoveBlinkTimer(pre=>pre=50);
+        }
+      },gotiMoveBlinkTimer)
     }else {
       clearInterval(gotiMoveAnimationInterval);
     }
@@ -741,7 +756,8 @@ const TriangleSVG = () => {
   console.log("cdbm", checkDicebeforeMove);
   console.log(tempChangeId);
   console.log(playerGotiState);
-  console.log("pv",preventDoubleClickMove);
+  console.log(gotiMoveBlinkcounter);
+  console.log(gotiMoveBlinkTimer);
 
   return (
     <div>
