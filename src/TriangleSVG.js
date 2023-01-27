@@ -3,6 +3,7 @@ import moveSound from './assets/move.wav'
 import playerMoveSound from './assets/playerMove.mp3';
 import diceThrowAudio from './assets/diceThrow.mp3';
 import BlinkSound from './assets/BlinkSound.wav';
+import gotiOpenSound from './assets/gotiOpen.wav';
 
 const gotiPoints = [
   [
@@ -359,6 +360,7 @@ const diceExceptionForEat = [7,8,9,10,11,25,26,27,28,29,43,44,45,46,47,61,62,63,
 const delMove = [12, 30, 48, 66, 84, 102];
 let eatFlag = false;
 let retainFlag = false;
+let afterAutoupdateGotiFlag = false;
 let preventDoubleClickMove = false;
 let playerGotiState = [
   [false, false, false, false],
@@ -395,6 +397,7 @@ const TriangleSVG = () => {
   let kk = null;
   let showDiceInterval = null;
   let gotiMoveAnimationInterval = null;
+  let gotiEatInterval = null;
 
   // audio functions
   function playSound(){
@@ -408,6 +411,9 @@ const TriangleSVG = () => {
   }
   function gotiMoveAlertBlinkSound(){
     new Audio(BlinkSound).play();
+  }
+  function gotiOpenSoundPlay(){
+    new Audio(gotiOpenSound).play();
   }
 
 
@@ -452,6 +458,7 @@ const TriangleSVG = () => {
           autoUpdateGoti();
         }, 1200);
       }else{
+        afterAutoupdateGotiFlag = false;
         setCheckDiceBeforeMove(true);
       }
       setDice6Flag(true);
@@ -497,9 +504,11 @@ const TriangleSVG = () => {
           },1000)
         }
       }
+      afterAutoupdateGotiFlag = false;
     }
   }
   
+  //opening goti
   function handleClick(e){
     if (!checkDicebeforeMove || !dice6Flag) return;
 
@@ -521,9 +530,14 @@ const TriangleSVG = () => {
     if(currentPlayerCount[currentPlayer-1]==4) return;
     currentPlayerCount[currentPlayer-1]++;
     
+    gotiOpenSoundPlay();
+
     let idx = currentPlayer * 18 - 5;
     setChangeId({ ...changeId, [idx]: checkCurrentColor() });
     setCheckDiceBeforeMove(false);
+
+    afterAutoupdateGotiFlag = true;
+    setIntialStatgeHideDiceFlag(false);
     //testing
     // let ok =false;
     // for(let i=0; i<currentPlayerCount.length; i++){
@@ -535,7 +549,10 @@ const TriangleSVG = () => {
       //moveClick(currentPlayer*18-5);
   }
   
+  //goti move
   function moveClick(e){
+    if(afterAutoupdateGotiFlag) return;
+
     //setting all the changId state to prevoius if any changes happen
     let temChangeId = {...changeId};
     for(let key in temChangeId){
@@ -610,13 +627,19 @@ const TriangleSVG = () => {
     setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
   }
 
+  //auto goti on board
   function autoUpdateGoti(){
+    gotiOpenSoundPlay();
+
     // changing the state to true of the goti
     playerGotiState[currentPlayer-1][0] = true;
 
     currentPlayerCount[currentPlayer - 1]++;
     let idx = currentPlayer * 18 - 5;
     setChangeId({ ...changeId, [idx]: checkCurrentColor() });
+
+    afterAutoupdateGotiFlag = true;
+    setIntialStatgeHideDiceFlag(false);
   }
 
   useEffect(()=>{
@@ -730,7 +753,7 @@ const TriangleSVG = () => {
         setTimeout(() => {
           nextPlayerSound();
         }, 300);
-        if(!dice6Flag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+        if(!dice6Flag || !eatFlag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -781,10 +804,44 @@ const TriangleSVG = () => {
       clearInterval(gotiMoveAnimationInterval);
     }
 
+    if(eatFlag){
+      gotiEatInterval = setInterval(()=>{
+        setTempChangeId(pre=>pre={cha})
+        setChangeId(
+          (pre) => (
+            delete pre[currentGoti],
+            {
+              ...tempChangeId,
+              ...pre,
+              [avoidMove.includes(currentGoti)
+                ?
+                  currentGoti + 6
+                :
+                  delGotiFlag && delMove.includes(currentGoti+1) 
+                  ?
+                  currentColor
+                  :
+                  currentGoti ===107 ? 0 : currentGoti+1
+              ]
+              : 
+              delGotiFlag && delMove.includes(currentGoti+1) 
+                ? pre[currentColor]+1
+                : currentColor,
+            }
+          )
+        );
+        
+        // incrementing for move
+        setCurrentGoti(pre =>pre= avoidMove.includes(pre) ? pre-6 : pre===0 ? 107 : pre-1);
+      },30)
+    }else{
+      clearInterval(gotiEatInterval);
+    }
     return () => {
       clearInterval(kk);
       clearInterval(k);
       clearInterval(gotiMoveAnimationInterval);
+      clearInterval(gotiEatInterval);
     }
   }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray, currentDiceMove, checkDicebeforeMove]);
   
@@ -918,7 +975,6 @@ const TriangleSVG = () => {
           />
         ))}
 
-        {/* col===((Math.floor((col+1)/18)+1)*18)-5  ||  */}
         {/* gotis for move */}
 
         {/* red */}
