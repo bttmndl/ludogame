@@ -2,6 +2,7 @@ import React, { useState,useEffect } from "react";
 import moveSound from './assets/move.wav'
 import playerMoveSound from './assets/playerMove.mp3';
 import diceThrowAudio from './assets/diceThrow.mp3';
+import BlinkSound from './assets/BlinkSound.wav';
 
 const gotiPoints = [
   [
@@ -352,7 +353,7 @@ const diceDots = [
   ],
 ];
 
-
+let diceCopy;
 const avoidMoveCopy = [6, 24, 42, 60, 78, 96];
 const diceExceptionForEat = [7,8,9,10,11,25,26,27,28,29,43,44,45,46,47,61,62,63,64,65,79,80,81,82,83,97,98,99,100,101];
 const delMove = [12, 30, 48, 66, 84, 102];
@@ -368,8 +369,6 @@ let playerGotiState = [
   [false, false, false, false],
 ];
 
-// let gotiMoveBlinkTimer = 100;
-// let gotiMoveBlinkcounter = 0;
 
 const TriangleSVG = () => {
   const [changeId, setChangeId] = useState({});
@@ -407,6 +406,9 @@ const TriangleSVG = () => {
   function diceThrowSound(){
     new Audio(diceThrowAudio).play();
   }
+  function gotiMoveAlertBlinkSound(){
+    new Audio(BlinkSound).play();
+  }
 
 
   //checking index based on Color
@@ -435,6 +437,7 @@ const TriangleSVG = () => {
     setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
     setIntialStatgeHideDiceFlag(true);
     let newDice =Math.floor(Math.random() * 6)+1;
+    diceCopy = newDice;
     setDice(newDice);
     setShowDiceFlag(true);
     setTimeout(() => {
@@ -462,10 +465,37 @@ const TriangleSVG = () => {
           setIntialStatgeHideDiceFlag(false);
         }, 1500);
       }else{
-        setCheckDiceBeforeMove(true);
-        setTimeout(()=>{
-          setAnimaFlag(false);
-        },1000)
+        setDice6Flag(false);
+
+        // if in the board there is only one goti for current player, goti should move automaticaly
+        let currentPlayerGoticount =0;
+        for(let key in changeId){
+          if(changeId[key] === checkCurrentColor()){
+            currentPlayerGoticount++;
+          }
+        }
+
+        //no goti on board
+        if(currentPlayerGoticount===0) {
+          setCheckDiceBeforeMove(false);
+          setTimeout(() => {
+            setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+            nextPlayerSound();
+            setIntialStatgeHideDiceFlag(false);
+          }, 1500);
+        }
+        // only 1 goti on board, move automaticaly
+        else if(currentPlayerGoticount===1) {
+          setCheckDiceBeforeMove(true);
+          setTimeout(()=>{
+            moveClick();
+          },1000)
+        }else{
+          setCheckDiceBeforeMove(true);
+          setTimeout(()=>{
+            setAnimaFlag(false);
+          },1000)
+        }
       }
     }
   }
@@ -514,21 +544,31 @@ const TriangleSVG = () => {
       }
     }
     setChangeId({...temChangeId});
-
-    let id = parseInt(e.target.id);
-    //let id = Number(i);
+    
+    let id;
+    if(currentPlayerCount[currentPlayer-1]===1){
+      for(let key in changeId){
+        if(changeId[key]===checkCurrentColor()){
+          id = parseInt(key);
+          break;
+        }
+      }
+    }else{
+      id = parseInt(e.target.id);
+    }
+    
     if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
     
     //for preventing doubleclick
     if(preventDoubleClickMove) return;
     preventDoubleClickMove = true;
 
-    //reseting goti blinck state
+    //reseting goti blink state
     setgotiMoveBlinkTimer(50);
     setgotiMoveBlinkcounter(0);
     
     //checking eating moves
-    let checkDiceIndexafterMove = id + dice;
+    let checkDiceIndexafterMove = id + diceCopy;
     if(diceExceptionForEat.includes(checkDiceIndexafterMove)){
       checkDiceIndexafterMove += 5;
     }else if(checkDiceIndexafterMove >107){
@@ -538,19 +578,15 @@ const TriangleSVG = () => {
     if (delMove.includes(checkDiceIndexafterMove)) {
       setDelGotiFlag(true);
     }
-    
-    setCurrentGoti(id);
-    setFlag(true);
-
 
     if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
       if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
         eatFlag = true;
-
+        
         let temp = [...currentPlayerCount];
         temp[checkIndexColor(changeId[checkDiceIndexafterMove])]--;
         setCurrentPlayerCount([...temp]);
-
+        
         setTimeout(() => {
           let findIndex = playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])].indexOf(true);
           playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])][findIndex] = false;
@@ -562,6 +598,9 @@ const TriangleSVG = () => {
       eatFlag = false;
       retainFlag = false;
     }
+    
+    setCurrentGoti(id);
+    setFlag(true);
 
     //removing last entry checkpoint to enter for the current player
     let temp = [...avoidMoveCopy];
@@ -702,7 +741,6 @@ const TriangleSVG = () => {
         // }
         // let key = Math.floor(Math.random()*arr.length);
         // moveClick(key);
-        
       }
     } else {
       clearInterval(kk);
@@ -721,6 +759,7 @@ const TriangleSVG = () => {
 
     if(!animaFlag && !flag && checkDicebeforeMove){
       gotiMoveAnimationInterval = setInterval(()=>{
+        gotiMoveAlertBlinkSound();
         let temp = {};
         for (let key in changeId){
           if(changeId[key]===checkCurrentColor()){
@@ -756,8 +795,7 @@ const TriangleSVG = () => {
   console.log("cdbm", checkDicebeforeMove);
   console.log(tempChangeId);
   console.log(playerGotiState);
-  console.log(gotiMoveBlinkcounter);
-  console.log(gotiMoveBlinkTimer);
+
 
   return (
     <div>
