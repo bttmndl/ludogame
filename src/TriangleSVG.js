@@ -355,10 +355,12 @@ const diceDots = [
 ];
 
 let diceCopy;
+let eatPlayer;
 const avoidMoveCopy = [6, 24, 42, 60, 78, 96];
 const diceExceptionForEat = [7,8,9,10,11,25,26,27,28,29,43,44,45,46,47,61,62,63,64,65,79,80,81,82,83,97,98,99,100,101];
 const delMove = [12, 30, 48, 66, 84, 102];
 let eatFlag = false;
+let eatAnimationFlag = false;
 let retainFlag = false;
 let afterAutoupdateGotiFlag = false;
 let preventDoubleClickMove = false;
@@ -392,6 +394,7 @@ const TriangleSVG = () => {
   const [tempChangeId, setTempChangeId] = useState({});
   const [gotiMoveBlinkTimer, setgotiMoveBlinkTimer] = useState(50);
   const [gotiMoveBlinkcounter, setgotiMoveBlinkcounter] = useState(0);
+  const [copyChangeId, setCopyChangeId] = useState({});
 
   let k = null;
   let kk = null;
@@ -598,16 +601,26 @@ const TriangleSVG = () => {
 
     if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
       if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
+        setCopyChangeId({...changeId});
+
         eatFlag = true;
-        
+        eatPlayer = checkIndexColor(changeId[checkDiceIndexafterMove]);
+
         let temp = [...currentPlayerCount];
         temp[checkIndexColor(changeId[checkDiceIndexafterMove])]--;
         setCurrentPlayerCount([...temp]);
         
+        let timer;
+        let timerCount = ((checkIndexColor(changeId[checkDiceIndexafterMove]))+1)*18-5;
+        if(timerCount > checkDiceIndexafterMove){
+          timer = 107-timerCount + checkDiceIndexafterMove;
+        }else{
+          timer = checkDiceIndexafterMove - timerCount;
+        }
         setTimeout(() => {
           let findIndex = playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])].indexOf(true);
           playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])][findIndex] = false;
-        }, 1600);
+        }, (timer+1)*50);
       } else {
         retainFlag = true;
       }
@@ -753,7 +766,12 @@ const TriangleSVG = () => {
         setTimeout(() => {
           nextPlayerSound();
         }, 300);
-        if(!dice6Flag || !eatFlag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+        if(!dice6Flag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+        if(eatFlag) {
+          eatAnimationFlag = true;
+          setCurrentPlayer(currentPlayer == 1 ? 6 : currentPlayer - 1);
+        }
+        else eatAnimationFlag = false;
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -804,36 +822,56 @@ const TriangleSVG = () => {
       clearInterval(gotiMoveAnimationInterval);
     }
 
-    if(eatFlag){
+    if(eatAnimationFlag){
+      if(changeId.hasOwnProperty(avoidMove.includes(currentGoti-6) ? currentGoti-6 : currentGoti===0 ? 107 : currentGoti-1)){
+        setTempChangeId({
+          [avoidMoveCopy.includes(currentGoti-6)
+            ? currentGoti - 6
+            : currentGoti === 0
+            ? 107
+            : currentGoti - 1]:
+            changeId[
+              avoidMoveCopy.includes(currentGoti-6)
+                ? currentGoti - 6
+                : currentGoti === 0
+                ? 107
+                : currentGoti - 1
+            ],
+        });
+      }
+
       gotiEatInterval = setInterval(()=>{
-        setTempChangeId(pre=>pre={cha})
+        playSound();
         setChangeId(
           (pre) => (
             delete pre[currentGoti],
             {
               ...tempChangeId,
               ...pre,
-              [avoidMove.includes(currentGoti)
+              [avoidMoveCopy.includes(currentGoti-6)
                 ?
-                  currentGoti + 6
+                currentGoti - 6
                 :
-                  delGotiFlag && delMove.includes(currentGoti+1) 
-                  ?
-                  currentColor
-                  :
-                  currentGoti ===107 ? 0 : currentGoti+1
+                currentGoti ===0 ? 107 : currentGoti-1
               ]
-              : 
-              delGotiFlag && delMove.includes(currentGoti+1) 
-                ? pre[currentColor]+1
-                : currentColor,
+              :  
+              numberWiseColor(eatPlayer)
             }
           )
         );
-        
-        // incrementing for move
-        setCurrentGoti(pre =>pre= avoidMove.includes(pre) ? pre-6 : pre===0 ? 107 : pre-1);
-      },30)
+
+        // decrementing for move
+        setCurrentGoti(pre =>pre= avoidMoveCopy.includes(pre-6) ? pre-6 : pre===0 ? 107 : pre-1);
+      },50)
+      if(currentGoti===(eatPlayer+1)*18 - 4){
+        eatAnimationFlag = false;
+        eatFlag = false;
+        setChangeId(pre=>(
+          delete pre[currentGoti],
+          {...tempChangeId,...pre}
+        ))
+        setTempChangeId(pre=>pre={});
+      }
     }else{
       clearInterval(gotiEatInterval);
     }
@@ -1054,7 +1092,7 @@ const TriangleSVG = () => {
                 stroke: "#000",
                 strokeWidth: 1,
                 cursor:"pointer",
-                fill: playerGotiState[row][col] ? "white" : numberWiseColor(row),
+                fill: playerGotiState[row][col] ? "white" : (!animaFlag && !flag && checkDicebeforeMove && dice6Flag && currentPlayer-1===row) ? "black" : numberWiseColor(row),
               }}
             />
           ))
