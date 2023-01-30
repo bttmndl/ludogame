@@ -320,6 +320,17 @@ const gotiMovePoints = [
   ["28.8%", "33.1%"],
 ];
 
+const extraGotiMovePoints = [
+  [],
+  [],
+  [],
+  [],
+  [],
+  []
+];
+
+const starCell = [3,21,39,57,75,93];
+
 const diceDots = [
   [["39.67%", "36%"]],
   [
@@ -600,8 +611,15 @@ const TriangleSVG = () => {
     }
 
     if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
-      if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
+      //pushing the radius value for overlapping goti in star mark cell
+      if(starCell.includes(checkDiceIndexafterMove)){
+        let indexofExtragoti = starCell.indexOf(checkDiceIndexafterMove);
+        let newRadiusValue = 8.5 - (extraGotiMovePoints[indexofExtragoti].length*3)
+        extraGotiMovePoints[indexofExtragoti].push([newRadiusValue,changeId[checkDiceIndexafterMove]]);
+      }
+      else if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
         setCopyChangeId({...changeId});
+        setCopyChangeId(pre=>(delete pre[checkDiceIndexafterMove],delete pre[id],{...pre,[checkDiceIndexafterMove]:checkCurrentColor()}));
 
         eatFlag = true;
         eatPlayer = checkIndexColor(changeId[checkDiceIndexafterMove]);
@@ -613,7 +631,7 @@ const TriangleSVG = () => {
         let timer;
         let timerCount = ((checkIndexColor(changeId[checkDiceIndexafterMove]))+1)*18-5;
         if(timerCount > checkDiceIndexafterMove){
-          timer = 107-timerCount + checkDiceIndexafterMove;
+          timer = 102-timerCount + checkDiceIndexafterMove;
         }else{
           timer = checkDiceIndexafterMove - timerCount;
         }
@@ -631,6 +649,14 @@ const TriangleSVG = () => {
     
     setCurrentGoti(id);
     setFlag(true);
+
+    if(starCell.includes(id)){
+      if(changeId.hasOwnProperty(id)){
+        if(changeId[id]!==checkCurrentColor()){
+          setChangeId({...changeId, [id]:checkCurrentColor()});
+        }
+      }
+    }
 
     //removing last entry checkpoint to enter for the current player
     let temp = [...avoidMoveCopy];
@@ -751,7 +777,7 @@ const TriangleSVG = () => {
         );
         
         // incrementing for move
-        setCurrentGoti(pre =>pre= avoidMove.includes(pre) ? pre+6 : pre===107 ? 0 : pre+1);
+        setCurrentGoti(pre =>pre = avoidMove.includes(pre) ? pre+6 : pre===107 ? 0 : pre+1);
         //decrementing dice
         setDice(pre => pre-1);
       }, 200);
@@ -769,7 +795,7 @@ const TriangleSVG = () => {
         if(!dice6Flag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
         if(eatFlag) {
           eatAnimationFlag = true;
-          setCurrentPlayer(currentPlayer == 1 ? 6 : currentPlayer - 1);
+          setCurrentGoti(avoidMoveCopy.includes(currentGoti) ? currentGoti-6 : currentGoti-1);
         }
         else eatAnimationFlag = false;
         //testing purpuse
@@ -871,6 +897,8 @@ const TriangleSVG = () => {
           {...tempChangeId,...pre}
         ))
         setTempChangeId(pre=>pre={});
+        setChangeId(pre=>pre={...copyChangeId});
+        setCurrentPlayer(currentPlayer == 1 ? 6 : currentPlayer - 1);
       }
     }else{
       clearInterval(gotiEatInterval);
@@ -947,7 +975,7 @@ const TriangleSVG = () => {
           <polygon
             key={col}
             id={col}
-            onClick = {moveClick}
+            onClick={moveClick}
             points={points[col]}
             style={{
               stroke: "#000",
@@ -975,20 +1003,23 @@ const TriangleSVG = () => {
         ))}
 
         {/* dice dots */}
-        {(checkDicebeforeMove || intialStageHideDiceFlag) && [...Array(showDiceFlag?showDice: currentDiceMove)].map((_, col) => (
-          <circle
-            key={"" + col + "-" + col + "-" + col + col}
-            className="cell"
-            cx={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][0]}
-            cy={diceDots[(showDiceFlag?showDice:currentDiceMove) - 1][col][1]}
-            r="7"
-            style={{
-              stroke: "black",
-              strokeWidth: 1,
-              fill: checkCurrentColor(),
-            }}
-          />
-        ))}
+        {(checkDicebeforeMove || intialStageHideDiceFlag) &&
+          [...Array(showDiceFlag ? showDice : currentDiceMove)].map(
+            (_, col) => (
+              <circle
+                key={"" + col + "-" + col + "-" + col + col}
+                className="cell"
+                cx={diceDots[(showDiceFlag ? showDice : currentDiceMove) - 1][col][0]}
+                cy={diceDots[(showDiceFlag ? showDice : currentDiceMove) - 1][col][1]}
+                r="7"
+                style={{
+                  stroke: "black",
+                  strokeWidth: 1,
+                  fill: checkCurrentColor(),
+                }}
+              />
+            )
+          )}
 
         {/* goti move */}
         {[...Array(108)].map((_, col) => (
@@ -1013,10 +1044,27 @@ const TriangleSVG = () => {
           />
         ))}
 
-        {/* gotis for move */}
+        {/* star cell goti*/}
+        {extraGotiMovePoints.map((_, row) =>
+          extraGotiMovePoints[row].map((_, col) => (
+            <circle
+              key={"" + col + "-" + col + "-" + col + col}
+              className="cell"
+              // id={row*18+3}
+              // onClick={moveClick}
+              cx={gotiMovePoints[row*18+3][0]}
+              cy={gotiMovePoints[row*18+3][1]}
+              r={extraGotiMovePoints[row][col][0]}
+              style={{
+                stroke:"black",
+                strokeWidth: 0.5,
+                fill: extraGotiMovePoints[row][col][1],
+              }}
+            />
+          ))
+        )}
 
         {/* red */}
-
         <polygon className="triangle white" points="250,60 390,60, 320,200" />
         <polygon className="triangle" points="320,200 390,250 500,80 435,35" />
         <polygon
@@ -1083,7 +1131,7 @@ const TriangleSVG = () => {
           [...Array(4)].map((_, col) => (
             <circle
               key={"" + row + "-" + col}
-              id={row+"-"+col}
+              id={row + "-" + col}
               onClick={handleClick}
               cx={gotiPoints[row][col][0]}
               cy={gotiPoints[row][col][1]}
@@ -1091,8 +1139,16 @@ const TriangleSVG = () => {
               style={{
                 stroke: "#000",
                 strokeWidth: 1,
-                cursor:"pointer",
-                fill: playerGotiState[row][col] ? "white" : (!animaFlag && !flag && checkDicebeforeMove && dice6Flag && currentPlayer-1===row) ? "black" : numberWiseColor(row),
+                cursor: "pointer",
+                fill: playerGotiState[row][col]
+                  ? "white"
+                  : !animaFlag &&
+                    !flag &&
+                    checkDicebeforeMove &&
+                    dice6Flag &&
+                    currentPlayer - 1 === row
+                  ? "black"
+                  : numberWiseColor(row),
               }}
             />
           ))
@@ -1110,7 +1166,6 @@ const TriangleSVG = () => {
           />
         ))}
       </svg>
-      
     </div>
   );
 };
