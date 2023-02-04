@@ -329,6 +329,15 @@ const extraGotiMovePoints = [
   []
 ];
 
+const starCellGotiObj = {
+  0 : [],
+  1 : [],
+  2 : [],
+  3 : [],
+  4 : [],
+  5 : []
+}
+
 const starCell = [3,21,39,57,75,93];
 
 const diceDots = [
@@ -451,71 +460,66 @@ const TriangleSVG = () => {
 
   //dice Click
   function diceClick(){
-    if(checkDicebeforeMove) return;
+    if (checkDicebeforeMove) return;
+
+    //managing current starcell
+    let temp = {...changeId};
+    for (let key in starCellGotiObj) {
+      if (starCellGotiObj[parseInt(key)].includes(checkCurrentColor())) {
+        temp[starCell[parseInt(key)]] = checkCurrentColor();
+      }
+    }
+    setChangeId({...temp});
+
     setTempChangeId({});
     diceThrowSound();
     setColorArray(["red", "green", "orange", "blue", "yellow", "purple"]);
     setIntialStatgeHideDiceFlag(true);
-    let newDice =Math.floor(Math.random() * 6)+1;
+    let newDice = Math.floor(Math.random() * 6) + 1;
     diceCopy = newDice;
     setDice(newDice);
+
     setShowDiceFlag(true);
     setTimeout(() => {
       setShowDiceFlag(false);
     }, 1000);
     setCurrentDiceMove(newDice);
-    
-    //if player turn but no possible move or player turn remain same 
-    if(newDice===6){
-      if (currentPlayerCount[currentPlayer - 1] === 0){
+
+    //if player turn but no possible move or player turn remain same
+    if (newDice === 6) {
+      if (currentPlayerCount[currentPlayer - 1] === 0) {
         setTimeout(() => {
           autoUpdateGoti();
         }, 1200);
-      }else{
+      } else {
         afterAutoupdateGotiFlag = false;
         setCheckDiceBeforeMove(true);
       }
       setDice6Flag(true);
-    }else{
+    } else {
       setDice6Flag(false);
-      if(currentPlayerCount[currentPlayer-1]===0){
+      if (currentPlayerCount[currentPlayer - 1] === 0) {
         setCheckDiceBeforeMove(false);
         setTimeout(() => {
-          setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
+          setCurrentPlayer(currentPlayer === 6 ? 1 : currentPlayer + 1);
           nextPlayerSound();
           setIntialStatgeHideDiceFlag(false);
         }, 1500);
-      }else{
+      } else {
         setDice6Flag(false);
 
         // if in the board there is only one goti for current player, goti should move automaticaly
-        let currentPlayerGoticount =0;
-        for(let key in changeId){
-          if(changeId[key] === checkCurrentColor()){
-            currentPlayerGoticount++;
-          }
-        }
-
-        //no goti on board
-        if(currentPlayerGoticount===0) {
-          setCheckDiceBeforeMove(false);
+        if (currentPlayerCount[currentPlayer - 1] === 1) {
+          setCheckDiceBeforeMove(true);
           setTimeout(() => {
-            setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
-            nextPlayerSound();
-            setIntialStatgeHideDiceFlag(false);
-          }, 1500);
-        }
-        // only 1 goti on board, move automaticaly
-        else if(currentPlayerGoticount===1) {
-          setCheckDiceBeforeMove(true);
-          setTimeout(()=>{
             moveClick();
-          },1000)
-        }else{
+          }, 1000);
+          console.log("1");
+        } else {
           setCheckDiceBeforeMove(true);
-          setTimeout(()=>{
+          setTimeout(() => {
             setAnimaFlag(false);
-          },1000)
+          }, 1000);
         }
       }
       afterAutoupdateGotiFlag = false;
@@ -566,33 +570,44 @@ const TriangleSVG = () => {
   //goti move
   function moveClick(e){
     if(afterAutoupdateGotiFlag) return;
-
-    //setting all the changId state to prevoius if any changes happen
-    let temChangeId = {...changeId};
-    for(let key in temChangeId){
-      if(temChangeId[key]==="black"){
-        temChangeId[key] = checkCurrentColor();
-      }
-    }
-    setChangeId({...temChangeId});
-    
-    let id;
-    if(currentPlayerCount[currentPlayer-1]===1){
-      for(let key in changeId){
-        if(changeId[key]===checkCurrentColor()){
-          id = parseInt(key);
-          break;
-        }
-      }
-    }else{
-      id = parseInt(e.target.id);
-    }
-    
-    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) return;
     
     //for preventing doubleclick
     if(preventDoubleClickMove) return;
     preventDoubleClickMove = true;
+
+    //setting all the changId state to prevoius if any changes happen
+    // let temChangeId = {...changeId};
+    // for(let key in temChangeId){
+    //   if(temChangeId[key]==="black"){
+    //     temChangeId[key] = checkCurrentColor();
+    //   }
+    // }
+    // setChangeId({...temChangeId});
+    
+    let flag = false;
+    let id;
+    if(currentPlayerCount[currentPlayer-1]===1){
+      for(let key in starCellGotiObj){
+        if(starCellGotiObj[key].includes(checkCurrentColor())){
+          id = (parseInt(key)*18)+3;
+          flag = true;
+          break;
+        }
+      }
+      for(let key in changeId){
+        if(changeId[key]===checkCurrentColor()){
+          id = parseInt(key);
+        }
+      }
+      
+    }else{
+      id = parseInt(e.target.id);
+    }
+    console.log("jhdfjdhfjdhjfh", id);
+
+    if (!changeId.hasOwnProperty(id) || changeId[id] !== checkCurrentColor()) {
+      if(!flag)return;
+    }
 
     //reseting goti blink state
     setgotiMoveBlinkTimer(50);
@@ -609,15 +624,29 @@ const TriangleSVG = () => {
     if (delMove.includes(checkDiceIndexafterMove)) {
       setDelGotiFlag(true);
     }
-
-    if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
-      //pushing the radius value for overlapping goti in star mark cell
-      if(starCell.includes(checkDiceIndexafterMove)){
-        let indexofExtragoti = starCell.indexOf(checkDiceIndexafterMove);
-        let newRadiusValue = 8.5 - (extraGotiMovePoints[indexofExtragoti].length*3)
-        extraGotiMovePoints[indexofExtragoti].push([newRadiusValue,changeId[checkDiceIndexafterMove]]);
+    //pushing the radius value for overlapping goti in star mark cell
+    if(starCell.includes(id) && starCellGotiObj[starCell.indexOf(id)].includes(checkCurrentColor())){
+      let delIndex = starCellGotiObj[starCell.indexOf(id)].indexOf(checkCurrentColor());
+      starCellGotiObj[starCell.indexOf(id)].splice(delIndex,1);
+      for(let i=0; i<extraGotiMovePoints[starCell.indexOf(id)].length;i++){
+        if(extraGotiMovePoints[starCell.indexOf(id)][i][1]===checkCurrentColor()){
+          extraGotiMovePoints[starCell.indexOf(id)].splice(i,1);
+        }
       }
-      else if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
+      let radius = 11.5;
+      for(let i=0; i<extraGotiMovePoints[starCell.indexOf(id)].length; i++){
+        extraGotiMovePoints[starCell.indexOf(id)][i][0] = radius;
+        radius = radius - 3.5;
+      }
+    }
+    else if(starCell.includes(checkDiceIndexafterMove)){
+      let indexofExtragoti = starCell.indexOf(checkDiceIndexafterMove);
+      let newRadiusValue = 11.5 - (extraGotiMovePoints[indexofExtragoti].length*3)
+      extraGotiMovePoints[indexofExtragoti].push([newRadiusValue,checkCurrentColor()]);
+      starCellGotiObj[starCell.indexOf(checkDiceIndexafterMove)].push(checkCurrentColor());
+    }
+    else if (changeId.hasOwnProperty(checkDiceIndexafterMove)) {
+      if (changeId[checkDiceIndexafterMove] !== checkCurrentColor()) {
         setCopyChangeId({...changeId});
         setCopyChangeId(pre=>(delete pre[checkDiceIndexafterMove],delete pre[id],{...pre,[checkDiceIndexafterMove]:checkCurrentColor()}));
 
@@ -635,6 +664,7 @@ const TriangleSVG = () => {
         }else{
           timer = checkDiceIndexafterMove - timerCount;
         }
+
         setTimeout(() => {
           let findIndex = playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])].indexOf(true);
           playerGotiState[checkIndexColor(changeId[checkDiceIndexafterMove])][findIndex] = false;
@@ -649,14 +679,6 @@ const TriangleSVG = () => {
     
     setCurrentGoti(id);
     setFlag(true);
-
-    if(starCell.includes(id)){
-      if(changeId.hasOwnProperty(id)){
-        if(changeId[id]!==checkCurrentColor()){
-          setChangeId({...changeId, [id]:checkCurrentColor()});
-        }
-      }
-    }
 
     //removing last entry checkpoint to enter for the current player
     let temp = [...avoidMoveCopy];
@@ -792,12 +814,33 @@ const TriangleSVG = () => {
         setTimeout(() => {
           nextPlayerSound();
         }, 300);
-        if(!dice6Flag)setCurrentPlayer(currentPlayer == 6 ? 1 : currentPlayer + 1);
-        if(eatFlag) {
+        if (!dice6Flag)
+          setCurrentPlayer(currentPlayer === 6 ? 1 : currentPlayer + 1);
+        if (eatFlag) {
           eatAnimationFlag = true;
-          setCurrentGoti(avoidMoveCopy.includes(currentGoti) ? currentGoti-6 : currentGoti-1);
+          setCurrentGoti(
+            avoidMoveCopy.includes(currentGoti)
+              ? currentGoti - 6
+              : currentGoti === 107
+              ? 0
+              : currentGoti - 1
+          );
+        } else eatAnimationFlag = false;
+
+        if (starCell.includes(currentGoti)) {
+          setChangeId((pre) => (delete pre[currentGoti], { ...pre }));
         }
-        else eatAnimationFlag = false;
+
+        //deleting the current starcell goti
+        let temp = { ...changeId };
+        for (let key in temp) {
+          if (starCell.includes(parseInt(key))) {
+            delete temp[key];
+          }
+        }
+        setChangeId((pre)=>(pre={...temp}));
+
+        // console.log("after change", changeId);
         //testing purpuse
         //handleClick();
         // let arr = [];
@@ -911,13 +954,14 @@ const TriangleSVG = () => {
     }
   }, [dice, changeId, flag, currentPlayer, delGotiFlag, animaFlag, colorArray, currentDiceMove, checkDicebeforeMove]);
   
-  console.log(changeId, avoidMove, delMove, currentGoti,currentPlayerCount);
+  console.log(changeId, avoidMove, delMove, currentGoti, currentPlayerCount);
   console.log("cp", currentPlayer);
   console.log("dice", dice);
   console.log("dice6Flag", dice6Flag);
   console.log("cdbm", checkDicebeforeMove);
   console.log(tempChangeId);
-  console.log(playerGotiState);
+  console.log(starCellGotiObj);
+  console.log(extraGotiMovePoints);
 
 
   return (
@@ -974,8 +1018,6 @@ const TriangleSVG = () => {
         {[...Array(108)].map((_, col) => (
           <polygon
             key={col}
-            id={col}
-            onClick={moveClick}
             points={points[col]}
             style={{
               stroke: "#000",
@@ -1021,6 +1063,23 @@ const TriangleSVG = () => {
             )
           )}
 
+        {/* star cell goti*/}
+        {extraGotiMovePoints.map((_, row) =>
+          extraGotiMovePoints[row].map((_, col) => (
+            <circle
+              key={"" + col + "-" + col + "-" + col + col}
+              cx={gotiMovePoints[row*18+3][0]}
+              cy={gotiMovePoints[row*18+3][1]}
+              r={extraGotiMovePoints[row][col][0]}
+              style={{
+                stroke: "black",
+                strokeWidth: 0.5,
+                fill: extraGotiMovePoints[row][col][1],
+              }}
+            />
+          ))
+        )}
+
         {/* goti move */}
         {[...Array(108)].map((_, col) => (
           <circle
@@ -1043,26 +1102,6 @@ const TriangleSVG = () => {
             }}
           />
         ))}
-
-        {/* star cell goti*/}
-        {extraGotiMovePoints.map((_, row) =>
-          extraGotiMovePoints[row].map((_, col) => (
-            <circle
-              key={"" + col + "-" + col + "-" + col + col}
-              className="cell"
-              // id={row*18+3}
-              // onClick={moveClick}
-              cx={gotiMovePoints[row*18+3][0]}
-              cy={gotiMovePoints[row*18+3][1]}
-              r={extraGotiMovePoints[row][col][0]}
-              style={{
-                stroke:"black",
-                strokeWidth: 0.5,
-                fill: extraGotiMovePoints[row][col][1],
-              }}
-            />
-          ))
-        )}
 
         {/* red */}
         <polygon className="triangle white" points="250,60 390,60, 320,200" />
@@ -1124,7 +1163,6 @@ const TriangleSVG = () => {
           className="triangle purple"
           points="250,330 273,320 273,257 250,250"
         />
-        {/* <circle className="purple" cx="17%" cy="20%" r="15" /> */}
 
         {/* individual gotis */}
         {[...Array(6)].map((_, row) =>
