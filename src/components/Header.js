@@ -1,4 +1,5 @@
 import React, {useState} from 'react'
+import SignUP from './SignUP';
 import '../App.css';
 
 const headerStyle = {
@@ -16,21 +17,27 @@ const brand_logo = {
 };
 
 const header_list = {
-    width: "70%",
+    width: "60%",
     paddingTop:"15px",
-    
 }
 
 const header_list_childs = {
-    display: "flex",
-    justifyContent: "space-around",
-    alignItems: "center",
-    fontSize:"17px",
-    color:"lightblue",
-    cursor:"pointer",
-}
+  display: "flex",
+  justifyContent: "space-around",
+  alignItems: "center",
+  fontSize: "17px",
+  color: "lightblue",
+  cursor: "pointer",
+};
 
-const playButtonStyle = {
+const signUpStyle = {
+  width: "10%",
+  paddingTop: "15px",
+  display: "flex",
+  justifyContent: "center",
+};
+
+export const playButtonStyle = {
   background: "lightgreen",
   border: "none",
   borderRadius: "2px",
@@ -63,6 +70,9 @@ export default function Header() {
             <button style={playButtonStyle}>Play Now</button>
           </li>
         </ul>
+      </div>
+      <div style={signUpStyle}>
+        <SignUP />
       </div>
     </div>
   );
