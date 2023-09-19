@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { playButtonStyle } from "./Header";
 import axios from "axios";
+import Cookies from "universal-cookie";
 
 const LoginSignUpStyle = {
   display: "flex",
@@ -22,6 +23,8 @@ const LoginSignup = () => {
     password: "",
   })
 
+//   const [user, setUser] = useState(null);
+
   const handleLogin = () => {
     setShowLogin(!showLogin);
     setShowSignup(false);
@@ -33,8 +36,32 @@ const LoginSignup = () => {
   };
 
   const dataSignUp = ()=>{
-    
+    const cookies = new Cookies();
+
+    axios.post("http://localhost:3001", userSignUpInfo).then((res) => {
+      const { token, userId, username, email, hashedPassword } = res.data;
+      cookies.set("token", token);
+      cookies.set("userId", userId);
+      cookies.set("username", username);
+      cookies.set("email", email);
+      cookies.set("hashedPassword", hashedPassword);
+    });
   }
+
+  const dataLogIn = ()=>{
+    const cookies = new Cookies();
+
+    axios.post("http://localhost:3001", userLoginInfo).then((res) => {
+      const { token, userId, username, email, hashedPassword } = res.data;
+      cookies.set("token", token);
+      cookies.set("userId", userId);
+      cookies.set("username", username);
+      cookies.set("email", email);
+      cookies.set("hashedPassword", hashedPassword);
+    });
+  }
+
+  console.log(userLoginInfo);
 
   return (
     <div>
@@ -66,8 +93,8 @@ const LoginSignup = () => {
             {showLogin && (
               <div style={LoginSignUpStyle}>
                 <h2 style={{ color: "white" }}>Login</h2>
-                <input type="text" placeholder="Username" onChange={(e)=>setUserSignUpInfo({...userLoginInfo, username:e.target.value})}/>
-                <input type="password" placeholder="Password" onChange={(e)=>setUserSignUpInfo({...userLoginInfo, password:e.target.value})}/>
+                <input type="text" placeholder="Username" onChange={(e)=>setUserLoginInfo({...userLoginInfo, username:e.target.value})}/>
+                <input type="password" placeholder="Password" onChange={(e)=>setUserLoginInfo({...userLoginInfo, password:e.target.value})}/>
                 <button onClick={dataLogIn}>Submit</button>
                 <button onClick={handleSignup}>Signup</button>
                 <button onClick={handleLogin}>X</button>
