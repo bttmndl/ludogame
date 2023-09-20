@@ -5,9 +5,11 @@ import Body from './components/Body';
 import Socket from './Socket.js';
 import LudoBoard from './LudoBoard';
 
-
+//10-4-12
+//8-3-9
+//6-2-6
 const App = () => {
-  const [count, setCount] = useState(6)
+  const [count, setCount] = useState(10)
   // useEffect(()=>{
   //   const k = setInterval(()=>{setCount(pre=>pre+2)},[50]);
   //   return ()=> clearInterval(k);
