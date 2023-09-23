@@ -47,7 +47,7 @@ function LudoBoard({ playerCount }) {
   function generateLineCorinates() {
     const corner = [];
     const side = [];
-    const rot = Math.ceil(playerCount/3);
+    const rot = (playerCount/2)-1;
     const cord = [];
 
     for (let i = 0; i < polygonData.length; i++) {
@@ -93,15 +93,15 @@ function LudoBoard({ playerCount }) {
     }
 
     function determineIndex(i){
-        const cornerPointIdx = (i + 3 * rot) % polygonData.length;
-        const midPointFirst = (i + 4 + 3 * rot) % polygonData.length;
-        const midPointSecond = (i + 2 + 3 * rot) % polygonData.length;
+        const cornerPointIdx = (i + 3*rot) % polygonData.length;
+        const midPointFirst = (i + 4 + 3*rot) % polygonData.length;
+        const midPointSecond = (i + 2 + 3*rot) % polygonData.length;
 
         return i%3===0 ? cornerPointIdx: i%3===1 ? midPointFirst :midPointSecond;
     }
 
     function cornerIndex(i){
-        return (i+playerCount*rot) % polygonData.length;
+        return (i+3*(rot+2)) % polygonData.length;
     }
 
     function extendLine(x1, y1, x2, y2, extensionLength) {
@@ -132,25 +132,25 @@ function LudoBoard({ playerCount }) {
 
 
   function lineToBox() {
-  const board = [];
-  const boardCellArray = generateLineCorinates();
+    const board = [];
+    const boardCellArray = generateLineCorinates();
 
-  for (let i = 0; i < boardCellArray.length; i++) {
-    if(i%4===0) continue;
-    const box = [];
-    for (let j = 0; j < boardCellArray[i].length-1; j++) {
-      const p1 = [boardCellArray[i][j][0], boardCellArray[i][j][1]];
-      const p2 = [boardCellArray[(i + 1) % boardCellArray.length][j][0], boardCellArray[(i + 1) % boardCellArray.length][j][1]];
-      const p3 = [boardCellArray[(i + 1) % boardCellArray.length][j + 1][0], boardCellArray[(i + 1) % boardCellArray.length][j + 1][1]];
-      const p4 = [boardCellArray[i][j + 1][0], boardCellArray[i][j + 1][1]];
+    for (let i = 0; i < boardCellArray.length; i++) {
+      if(i%4===0) continue;
+      const box = [];
+      for (let j = 0; j < boardCellArray[i].length-1; j++) {
+        const p1 = [boardCellArray[i][j][0], boardCellArray[i][j][1]];
+        const p2 = [boardCellArray[(i + 1) % boardCellArray.length][j][0], boardCellArray[(i + 1) % boardCellArray.length][j][1]];
+        const p3 = [boardCellArray[(i + 1) % boardCellArray.length][j + 1][0], boardCellArray[(i + 1) % boardCellArray.length][j + 1][1]];
+        const p4 = [boardCellArray[i][j + 1][0], boardCellArray[i][j + 1][1]];
 
-      box.push(`${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]} ${p4[0]},${p4[1]}`);
+        box.push(`${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]} ${p4[0]},${p4[1]}`);
+      }
+      board.push(box);
     }
-    board.push(box);
-  }
 
-  return board;
-}
+    return board;
+  }
 
 
   function generateTwoMidPointsBetweenTwoPoints(x1, y1, x2, y2) {
@@ -172,8 +172,10 @@ function LudoBoard({ playerCount }) {
 
     return [x3, y3, x4, y4];
   }
+  
   console.log("lc",generateLineCorinates());
-  //console.log(polygonData)
+  console.log(polygonData.length)
+
   return (
     <div>
       <svg width={svgSize} height={svgSize}>
@@ -197,20 +199,19 @@ function LudoBoard({ playerCount }) {
           strokeWidth="2"
         />
 
-        {lineToBox().slice(k,k+22).map((p, idx) => (
-          <polygon 
-                points={p}
-                fill="none"
-                stroke="red"
-                strokeWidth="1"
-            />
-        ))}
-
+        {lineToBox()
+          .slice(k, k + 22)
+          .map((p, idx) => (
+            <polygon points={p} fill="none" stroke="red" strokeWidth="1" />
+          ))}
 
         {generateLineCorinates().map((e, idx) => (
-          <circle cx={e[2][0]} cy={e[2][1]} r={5} fill={idx === 0 && "red"} />
+          <circle cx={e[1][0]} cy={e[1][1]} r={5} fill={idx === 5 && "red"} />
         ))}
 
+        {polygonData.map(({x,y}, idx) => (
+          <circle cx={x} cy={y} r={5} fill={idx === k && "red"} />
+        ))}
         {/* Draw the polygon */}
         <polygon
           points={polygonData.map(({ x, y }) => `${x},${y}`).join(" ")}

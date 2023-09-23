@@ -6,7 +6,7 @@ import Socket from './Socket.js';
 import LudoBoard from './LudoBoard';
 
 const App = () => {
-  const [count, setCount] = useState(8)
+  const [count, setCount] = useState(6)
   // useEffect(()=>{
   //   const k = setInterval(()=>{setCount(pre=>pre+2)},[500]);
   //   return ()=> clearInterval(k);
