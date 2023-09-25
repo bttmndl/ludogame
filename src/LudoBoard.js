@@ -207,24 +207,65 @@ function LudoBoard({ playerCount }) {
 
   //Extracting triangle structucture point for each player Box area
   function generateTriangleCordForPlayerBox() {
-    const resultCordinates = [];
+    const resultCordinatesString = [];
+    const resultCordinatesArray = [];
     const cord = generateLineCorinates().filter(
       (_, i) => i % 4 === 0 || i % 4 === 1
     );
 
     for (let idx = 0; idx < cord.length; idx += 2) {
-      const point = `${cord[idx][0][0]},${cord[idx][0][1]} ${cord[idx][6][0]},${
-        cord[idx][6][1]
-      } ${cord[(idx + 1) % cord.length][6][0]},${
-        cord[(idx + 1) % cord.length][6][1]
-      }`;
-      resultCordinates.push(point);
+      const point = `
+          ${cord[idx][0][0]},${cord[idx][0][1]} 
+          ${cord[idx][6][0]},${cord[idx][6][1]} ${cord[(idx + 1) % cord.length][6][0]},${cord[(idx + 1) % cord.length][6][1]}
+        `;
+      resultCordinatesArray.push([[...cord[idx][0]], [...cord[idx][6]], [...cord[(idx + 1) % cord.length][6]]]);
+      resultCordinatesString.push(point);
     }
 
-    return resultCordinates;
+    return [resultCordinatesArray, resultCordinatesString];
   }
 
-  console.log("lc");
+  //Extracting circle codinates from Triangle cordinates, returning array
+  function generateCircleCordForPlayer() {
+    const cordinateArray = generateTriangleCordForPlayerBox()[0];
+
+    return cordinateArray.map((cord) => {
+      return calculateInnerEquilateralTriangle(cord);
+    });
+
+    function calculateInnerEquilateralTriangle(vertices) {
+      const center = calculateCenter(vertices);
+
+      // Calculate the coordinates of the midpoints between the center and the vertices
+      const p1 = [
+        (vertices[0][0] + center[0]) / 2,
+        (vertices[0][1] + center[1]) / 2,
+      ];
+
+      const p2 = [
+        (vertices[1][0] + center[0]) / 2,
+        (vertices[1][1] + center[1]) / 2,
+      ];
+
+      const p3 = [
+        (vertices[2][0] + center[0]) / 2,
+        (vertices[2][1] + center[1]) / 2,
+      ];
+
+      return [p1, p2, p3, center];
+    }
+
+    function calculateCenter(vertices) {
+      // Calculate the average x and y coordinates of the vertices
+      const sumX = vertices.reduce((sum, vertex) => sum + vertex[0], 0);
+      const sumY = vertices.reduce((sum, vertex) => sum + vertex[1], 0);
+      const centerX = sumX / vertices.length;
+      const centerY = sumY / vertices.length;
+      return [centerX, centerY];
+    }
+
+  }
+  console.log("lc", generateCircleCordForPlayer());
 
   return (
     <div>
@@ -258,6 +299,7 @@ function LudoBoard({ playerCount }) {
           {playerCount}
         </text>
 
+        {/* main board each cell rendering for goti move*/}
         {generateBoxesFromLineCoordinates().map((box, idx) => (
           <polygon
             key={idx}
@@ -286,8 +328,8 @@ function LudoBoard({ playerCount }) {
           strokeWidth="2"
         />
 
-        {/* Render triangles for player goti boxes */}
-        {generateTriangleCordForPlayerBox().map((cord,idx) => (
+        {/* Render triangles for player House boxes */}
+        {generateTriangleCordForPlayerBox()[1].map((cord, idx) => (
           <polygon
             key={idx}
             points={cord}
@@ -296,6 +338,12 @@ function LudoBoard({ playerCount }) {
             strokeWidth="1"
           />
         ))}
+
+        {/* Render circles for each player House boxes goti*/}
+        {generateCircleCordForPlayer().map((cord, idx) => (
+          cord.map((point, idx)=><circle key={idx} cx={point[0]} cy={point[1]} r={20} fill="red" />)
+        ))}
+
       </svg>
     </div>
   );
