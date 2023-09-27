@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 // Constants
 const SVG_SIZE = 800;
@@ -6,20 +6,84 @@ const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
 const POLYGON_SIZE = 100;
 
 function LudoBoard({ playerCount }) {
-  const [k] = useState(0);
-  // useEffect(()=>{
-  //   const kk = setInterval(()=>{sk(p=>(p+1)%(playerCount*18))},[30]);
-  //   return ()=> clearInterval(kk);
-  // },[k])
+  const [k, sk] = useState(null);
+  const [t, setT] = useState(null);
 
-  // inner BoardOutline generation of polygon
-  const polygonData = generatePolygonCoordinates(
-    SVG_SIZE / 2,
-    SVG_SIZE / 2,
-    playerCount,
-    POLYGON_SIZE
-  );
+  function handleAnimation(index) {
+    setT(Math.floor(Math.random() * 6) + 1 + index);
+    sk(1);
+  }
+  let kk = null;
+  useEffect(() => {
+    if (k) {
+      clearInterval(kk);
+      kk = setInterval(() => {
+        sk((p) => (p + 1) % (playerCount * 18 ));
+      }, [2000]);
+      //if (k === t) sk(null);
+    } else {
+      clearInterval(kk);
+    }
+    return () => clearInterval(kk);
+  }, [k]);
 
+  const numberWiseColor = ["red", "green", "orange", "blue", "yellow", "purple"];
+
+  // Generate polygon coordinates
+  const polygonData = useMemo(() => {
+    return generatePolygonCoordinates(
+      SVG_SIZE / 2,
+      SVG_SIZE / 2,
+      playerCount,
+      POLYGON_SIZE
+    );
+  }, [playerCount]);
+
+  // Generate smaller polygon coordinates
+  const polygonDataSmall = useMemo(() => {
+    return generatePolygonCoordinates(
+      SVG_SIZE / 2,
+      SVG_SIZE / 2,
+      playerCount,
+      POLYGON_SIZE/1.4
+    );
+  }, [playerCount]);
+
+  // Generate line coordinates
+  const lineCoordinates = useMemo(() => {
+    return generateLineCorinates(playerCount, polygonData);
+  }, [playerCount, polygonData]);
+
+  // Generate boxes from line coordinates for playerMove
+  const boxes = useMemo(() => {
+    return generateBoxesFromLineCoordinates();
+  }, [lineCoordinates, k]);
+
+  // Generate triangle coordinates for player boxes
+  const [triangleCoordsArray, triangleCoordsStringArray] = useMemo(() => {
+    return generateTriangleCordForPlayerBox();
+  }, [lineCoordinates]);
+
+  // Generate inner triangle coordinates for player boxes
+  const triangleInnerCordsArray = useMemo(() => {
+    return generateInnerTriangleCordForPlayerBox();
+  }, [lineCoordinates]);
+
+  // Generate circle coordinates for player House boxes goti
+  const circleCoordinates = useMemo(() => {
+    return generateCircleCordForPlayer();
+  }, [triangleCoordsArray]);
+
+  //generate win box line cord
+  const winBoxCordLine = useMemo(()=>{
+    return generateWinBoxCord();
+  },[polygonData, polygonDataSmall])
+
+  const starCords = useMemo(()=>{
+    return generateStarPolygon();
+  },[boxes])
+
+  //----------------------------------------------------------
   function generatePolygonCoordinates(cx, cy, sides, size) {
     const coordinates = [];
 
@@ -31,7 +95,7 @@ function LudoBoard({ playerCount }) {
     const x = cx + size * Math.cos(0);
     const y = cy + size * Math.sin(0);
     coordinates.push({ x, y });
-    
+
     for (let i = 1; i < sides; i++) {
       const x = cx + size * Math.cos(i * angleIncrement);
       const y = cy + size * Math.sin(i * angleIncrement);
@@ -209,16 +273,19 @@ function LudoBoard({ playerCount }) {
   function generateTriangleCordForPlayerBox() {
     const resultCordinatesString = [];
     const resultCordinatesArray = [];
-    const cord = generateLineCorinates().filter(
-      (_, i) => i % 4 === 0 || i % 4 === 1
-    );
+    const cord = lineCoordinates.filter((_, i) => i % 4 === 0 || i % 4 === 1);
 
     for (let idx = 0; idx < cord.length; idx += 2) {
-      const point = `
-          ${cord[idx][0][0]},${cord[idx][0][1]} 
-          ${cord[idx][6][0]},${cord[idx][6][1]} ${cord[(idx + 1) % cord.length][6][0]},${cord[(idx + 1) % cord.length][6][1]}
-        `;
-      resultCordinatesArray.push([[...cord[idx][0]], [...cord[idx][6]], [...cord[(idx + 1) % cord.length][6]]]);
+      const [p1, p2] = cord[idx][0];
+      const [q1, q2] = cord[idx][6];
+      const [r1, r2] = cord[(idx + 1) % cord.length][6];
+
+      const point = `${p1},${p2} ${q1},${q2} ${r1},${r2}`;
+      resultCordinatesArray.push([
+        [p1, p2],
+        [q1, q2],
+        [r1, r2],
+      ]);
       resultCordinatesString.push(point);
     }
 
@@ -227,9 +294,7 @@ function LudoBoard({ playerCount }) {
 
   //Extracting circle codinates from Triangle cordinates, returning array
   function generateCircleCordForPlayer() {
-    const cordinateArray = generateTriangleCordForPlayerBox()[0];
-
-    return cordinateArray.map((cord) => {
+    return triangleCoordsArray.map((cord) => {
       return calculateInnerEquilateralTriangle(cord);
     });
 
@@ -263,9 +328,112 @@ function LudoBoard({ playerCount }) {
       const centerY = sumY / vertices.length;
       return [centerX, centerY];
     }
-
   }
-  console.log("lc", generateCircleCordForPlayer());
+
+  function generateInnerTriangleCordForPlayerBox() {
+    return triangleCoordsArray.map((cord) => {
+      return calculateInnerEquilateralTriangle(cord);
+    });
+
+    function calculateInnerEquilateralTriangle(vertices) {
+      const center = calculateCenter(vertices);
+      const len = 27;
+      // Calculate the coordinates of the midpoints between the center and the vertices
+      const p1 = [
+        (vertices[0][0] + center[0]) / 2,
+        (vertices[0][1] + center[1]) / 2,
+      ];
+
+      const p2 = [
+        (vertices[1][0] + center[0]) / 2,
+        (vertices[1][1] + center[1]) / 2,
+      ];
+
+      const p3 = [
+        (vertices[2][0] + center[0]) / 2,
+        (vertices[2][1] + center[1]) / 2,
+      ];
+
+      return `${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`;
+    }
+
+    function calculateCenter(vertices) {
+      // Calculate the average x and y coordinates of the vertices
+      const sumX = vertices.reduce((sum, vertex) => sum + vertex[0], 0);
+      const sumY = vertices.reduce((sum, vertex) => sum + vertex[1], 0);
+      const centerX = sumX / vertices.length;
+      const centerY = sumY / vertices.length;
+      return [centerX, centerY];
+    }
+  }
+
+  function generateWinBoxCord(){
+    let res = [];
+    for(let i=0; i<polygonData.length; i+=3){
+      const {x:x1, y:y1} = polygonData[i];
+      const {x:x2, y:y2} = polygonDataSmall[i];
+      const {x:x3, y:y3} = polygonDataSmall[(i+3)%polygonData.length];
+      const { x:x4, y:y4 } = polygonData[(i + 3) % polygonData.length];
+
+      res.push(`${x1},${y1} ${x2},${y2} ${x3},${y3} ${x4},${y4}`);
+    }
+    return res;
+  }
+
+  function generateStarPolygon() {
+    return boxes.filter((_,idx)=>idx%18===3).map((cord, idx)=>  generateCords(cord,idx))
+
+    function generateCords(coordinates,idx) {
+      // Split the coordinates string into an array of values
+      const coordsArray = coordinates
+        .split(" ")
+        .map((coord) => coord.split(",").map(parseFloat));
+      
+      const outerRange = idx === 0 || idx===playerCount/2 || idx === (playerCount/2)-1 || idx === playerCount-1 ? 2*playerCount*0.16 : 1;
+
+      // Destructure the coordinates into individual variables
+      const [x1, y1, x2, y2, x3, y3, x4, y4] = coordsArray.flat();
+
+      // Calculate the center of the rectangle
+      const centerX = (x1 + x3) / 2;
+      const centerY = (y1 + y3) / 2;
+
+      // Calculate the width and height of the rectangle
+      const width = Math.abs(x2 - x1);
+      const height = Math.abs(y4 - y1);
+
+      // Calculate the maximum radius that will fit within the rectangle
+      const maxRadius = Math.min(width / 2, height / 2);
+
+      // Define the number of points for the star
+      const numPoints = 5;
+
+      // Define the length of the inner and outer points based on maxRadius
+      const innerRadius = maxRadius /2; // Adjust this value for the inner radius
+      const outerRadius = maxRadius* outerRange; // Adjust this value for the outer radius
+
+      // Initialize an array to store the polygon points
+      const points = [];
+
+      for (let i = 0; i < numPoints * 2; i++) {
+        const angle = (i * Math.PI) / numPoints; // Angle between points
+
+        // Calculate coordinates for inner and outer points
+        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+        const pointX = centerX + radius * Math.cos(angle);
+        const pointY = centerY + radius * Math.sin(angle);
+
+        points.push([pointX, pointY]);
+      }
+
+      // Convert the points array back to a single string
+      const pointsString = points.map((point) => point.join(",")).join(" ");
+
+      return pointsString;
+    }
+  }
+  
+  console.log("k");
 
   return (
     <div>
@@ -300,23 +468,22 @@ function LudoBoard({ playerCount }) {
         </text>
 
         {/* main board each cell rendering for goti move*/}
-        {generateBoxesFromLineCoordinates().map((box, idx) => (
+        {boxes.map((box, idx) => (
           <polygon
             key={idx}
+            onClick={() => handleAnimation(idx)}
             points={box}
-            fill={idx === k ? "red" : "none"}
-            stroke="red"
+            fill={
+              (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
+              (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
+                ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
+                : k === idx
+                ? "black"
+                : "white"
+            }
+            stroke="black"
             strokeWidth="1"
-          />
-        ))}
-
-        {generateLineCorinates().map((e, idx) => (
-          <circle
-            key={idx}
-            cx={e[1][0]}
-            cy={e[1][1]}
-            r={5}
-            fill={idx === k && "red"}
+            style={{ cursor: "pointer" }}
           />
         ))}
 
@@ -328,22 +495,88 @@ function LudoBoard({ playerCount }) {
           strokeWidth="2"
         />
 
-        {/* Render triangles for player House boxes */}
-        {generateTriangleCordForPlayerBox()[1].map((cord, idx) => (
+        {/* Draw the amller polygon */}
+        <polygon
+          points={polygonDataSmall.map(({ x, y }) => `${x},${y}`).join(" ")}
+          fill="none"
+          stroke="green"
+          strokeWidth="2"
+        />
+
+        {/* Draw the win box line */}
+        {winBoxCordLine.map((cord, idx) => (
           <polygon
             key={idx}
             points={cord}
-            fill="green"
+            fill={numberWiseColor[(idx + 1) % playerCount]}
             stroke="black"
             strokeWidth="1"
           />
         ))}
 
-        {/* Render circles for each player House boxes goti*/}
-        {generateCircleCordForPlayer().map((cord, idx) => (
-          cord.map((point, idx)=><circle key={idx} cx={point[0]} cy={point[1]} r={20} fill="red" />)
+        {/* Render triangles for player House boxes */}
+        {triangleCoordsStringArray.map((cord, idx) => (
+          <polygon
+            key={idx}
+            points={cord}
+            fill="white"
+            stroke="black"
+            strokeWidth="1"
+          />
         ))}
 
+        {/* Render inner triangles for player House boxes */}
+        {triangleInnerCordsArray.map((cord, idx) => (
+          <polygon
+            key={idx}
+            points={cord}
+            fill={numberWiseColor[idx]}
+            stroke="black"
+            strokeWidth="1"
+          />
+        ))}
+
+        {/* extra just for cover of design*/}
+        {circleCoordinates.map((cord, i) =>
+          cord.map(
+            (point, idx) =>
+              idx === 3 && (
+                <circle
+                  key={idx}
+                  cx={point[0]}
+                  cy={point[1]}
+                  r={30}
+                  fill="white"
+                />
+              )
+          )
+        )}
+
+        {/* Render circles for each player House boxes goti*/}
+        {circleCoordinates.map((cord, i) =>
+          cord.map((point, idx) => (
+            <circle
+              key={idx}
+              cx={point[0]}
+              cy={point[1]}
+              r={20}
+              stroke="black"
+              fill={numberWiseColor[i]}
+              strokeWidth="3"
+            />
+          ))
+        )}
+
+        {/* Render ans marking special cells*/}
+        {starCords.map((cord, idx) => (
+          <polygon
+            key={idx}
+            points={cord}
+            fill={numberWiseColor[(idx+1) % playerCount]}
+            stroke={numberWiseColor[(idx+1) % playerCount]}
+            strokeWidth="2"
+          />
+        ))}
       </svg>
     </div>
   );
