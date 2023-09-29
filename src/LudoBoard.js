@@ -10,9 +10,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   const [t, setT] = useState(null);
   const [d, sd] = useState(20);
   const [f, sf] = useState(true);
+  const [toggle, setToggle] = useState(true);
 
   function handleAnimation(index) {
-    setT(Math.floor(Math.random() * 6) + 1 + index);
+    setT(Math.floor(Math.random() * 6) + 1 + index+30);
     sk(index);
   }
   let kk = null;
@@ -23,7 +24,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       if (k == t) sk(null);
       kk = setInterval(() => {
         sk((p) => (p + 1) % (playerCount * 18));
-      }, [200]);
+        setToggle(p=>!p)
+      }, [300]);
     } else {
       clearInterval(kk);
     }
@@ -45,6 +47,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     "yellow",
     "purple",
   ];
+
+  //................MEMOIZATION..........................................
 
   // Generate polygon coordinates
   const polygonData = useMemo(() => {
@@ -105,7 +109,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     return generateStarPolygon();
   }, [boxes]);
 
-  //----------------------------------------------------------
+  //----------------------FUNCTIIONS------------------------------------
   function generatePolygonCoordinates(cx, cy, sides, size) {
     const coordinates = [];
 
@@ -472,48 +476,57 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       const point = rectanglePoints
         .split(" ")
         .map((cord) => cord.split(","))
-        .filter((_,i)=>i%2===0)
         .flat()
         .map((p) => parseFloat(p));
 
-      const [x1, y1, x3, y3] = point;
+      const [x1, y1, x2,y2, x3, y3,x4,y4] = point;
 
       const midX = (x1 + x3) / 2;
       const midY = (y1 + y3) / 2;
 
       // Define the size and appearance of the pin drop marker
-      const headRadius = 13; // Adjust the head radius as needed
-
+      const headRadius =15; // calculating radius based on the width of the rectangle
+      const leftShift = 40;
       // Generate the coordinates for the pin head
       const headCoordinates = generateCircleCoordinates(
-        midX-30,
+        midX - leftShift,
         midY,
         headRadius,
+        leftShift
       );
 
-      return headCoordinates;
+      return {headCoordinates, headCircle: [midX-leftShift,midY], tailCircle: [midX,midY]};
     }
 
-    function generateCircleCoordinates(centerX, centerY, radius) {
+    function generateCircleCoordinates(centerX, centerY, radius, leftShift) {
       const numPoints = 20; // Number of points to approximate the circle
       const points = [];
-      points.push([centerX+30, centerY]);
+
+      //intial marker starting point
+      points.push([centerX + leftShift+7, centerY]);
 
       for (let i = 0; i < numPoints; i++) {
-        const angle = (i * Math.PI * 2) / numPoints;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        points.push([x, y]);
+        if(i===5 || i===16) {
+          const angle = (i * Math.PI * 2) / numPoints;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          points.push([x, y]);
+        }
       }
 
-      points.push([centerX + 30, centerY]);
-      
+
+      //end marker point
+      //points.push([centerX, centerY]);
+
       // Convert the points array back to a single string
       const coordinates = points.map((point) => point.join(",")).join(" ");
 
       return coordinates;
     }
   }
+  const {x:x1,y:y1} = polygonData[0];
+  const { x: x2, y: y2 } = polygonData[1];
+  const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
 
   console.log("k");
 
@@ -541,7 +554,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         />
 
         <text
-          x={SVG_SIZE / 2 - 30}
+          x={SVG_SIZE / 2 - (playerCount <10 ? 30: 60)}
           y={SVG_SIZE / 2 + 40}
           fill="black"
           style={{ fontFamily: "Arial", fontSize: "100px" }}
@@ -555,13 +568,13 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
             key={idx}
             onClick={() => handleAnimation(idx)}
             points={box}
-            fill={
-              (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
-              (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
-                ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
-                : k === idx
-                ? "black"
-                : "white"
+            fill={"white"
+              // (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
+              // (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
+              //   ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
+              //   : k === idx
+              //   ? "black"
+              //   : "white"
             }
             stroke="black"
             strokeWidth="1"
@@ -678,11 +691,44 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           )
         )}
 
-        {/* rendering marker for player move*/}
+        {/* rendering marker for player move, mrker ->haid,marker,tail*/}
         {markers.map((cord, idx) => (
-          <polygon
+          idx===k&&<circle
             key={idx}
-            points={cord}
+            cx={cord.tailCircle[0]}
+            cy={cord.tailCircle[1]}
+            r={(toggle ? 6 : 0) + boxRadius}
+            fill="none"
+            stroke="red"
+            strokeWidth="2"
+          />
+        ))}
+        {markers.map((cord, idx) => (
+          idx===k&&<polygon
+            key={idx}
+            points={cord.headCoordinates}
+            fill="white"
+            stroke="black"
+            strokeWidth="1"
+          />
+        ))}
+        {markers.map((cord, idx) => (
+          idx===k&&<circle
+            key={idx}
+            cx={cord.headCircle[0]}
+            cy={cord.headCircle[1]}
+            r={(toggle ? 6 : 0) + boxRadius + 5}
+            fill="white"
+            stroke="black"
+            strokeWidth="1"
+          />
+        ))}
+        {markers.map((cord, idx) => (
+          idx===k&&<circle
+            key={idx}
+            cx={cord.headCircle[0]}
+            cy={cord.headCircle[1]}
+            r={(toggle ? 6 : 0) + boxRadius + 2}
             fill={numberWiseColor[(Math.floor(idx / 18) + 1) % 6]}
             stroke="black"
             strokeWidth="1"
