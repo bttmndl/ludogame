@@ -1,27 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 // Constants
-//const SVG_SIZE = 800;
 const POLYGON_SIZE = 100;
 
 function LudoBoard({ playerCount, SVG_SIZE }) {
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
-  const [k, sk] = useState(null);
+  const [k, sk] = useState(45);
   const [t, setT] = useState(null);
   const [d, sd] = useState(20);
   const [f, sf] = useState(true);
   const [toggle, setToggle] = useState(true);
+  const [chakra, setChakra] =useState(false)
 
   function handleAnimation(index) {
-    setT(Math.floor(Math.random() * 6) + 1 + index+30);
+    setT(Math.floor(Math.random() * 6) + 1 + index+90);
     sk(index);
+    setToggle(!toggle)
   }
   let kk = null;
   let kkk = null;
+  let kkkk = null;
   useEffect(() => {
-    if (k) {
+    if (!k) {
       clearInterval(kk);
-      if (k == t) sk(null);
+      //if (k == t) sk(null);
       kk = setInterval(() => {
         sk((p) => (p + 1) % (playerCount * 18));
         setToggle(p=>!p)
@@ -31,13 +33,13 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     }
     return () => clearInterval(kk);
   }, [k]);
-  // useEffect(()=>{
-  //   clearInterval(kkk)
-  //   if(d>25) sf(false);
-  //   if(d<20) sf(true);
-  //   kkk=setInterval(()=>{sd(p=>f?p+0.5:p-0.5)},100);
-  //   return ()=>clearInterval(kkk);
-  // },[d])
+  useEffect(()=>{
+    if(toggle){
+      kkkk = setInterval(()=>{setChakra(p=>!p)},50);
+    }
+    kkk=setInterval(()=>{setToggle(p=>!p)},2000);
+    return ()=>{clearInterval(kkk);clearInterval(kkkk)};
+  },[toggle])
 
   const numberWiseColor = [
     "red",
@@ -83,7 +85,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   //genereting marker points for player move in boxes
   const markers = useMemo(() => {
     return generateDropdownMarker();
-  }, [boxes]);
+  }, [boxes, toggle]);
 
   // Generate triangle coordinates for player boxes
   const [triangleCoordsArray, triangleCoordsStringArray] = useMemo(() => {
@@ -485,8 +487,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       const midY = (y1 + y3) / 2;
 
       // Define the size and appearance of the pin drop marker
-      const headRadius =15; // calculating radius based on the width of the rectangle
-      const leftShift = 40;
+      const headRadius =toggle ? 20.3 :17.3 ; // calculating radius based on the width of the rectangle
+      const leftShift = toggle ? 55 : 35;
       // Generate the coordinates for the pin head
       const headCoordinates = generateCircleCoordinates(
         midX - leftShift,
@@ -503,20 +505,17 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       const points = [];
 
       //intial marker starting point
-      points.push([centerX + leftShift+7, centerY]);
+      points.push([centerX + leftShift+4, centerY]);
 
       for (let i = 0; i < numPoints; i++) {
-        if(i===5 || i===16) {
+        if(i>=4 && i<=16) {
           const angle = (i * Math.PI * 2) / numPoints;
           const x = centerX + radius * Math.cos(angle);
           const y = centerY + radius * Math.sin(angle);
           points.push([x, y]);
         }
       }
-
-
-      //end marker point
-      //points.push([centerX, centerY]);
+      points.push([centerX + leftShift + 4, centerY]);
 
       // Convert the points array back to a single string
       const coordinates = points.map((point) => point.join(",")).join(" ");
@@ -524,7 +523,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       return coordinates;
     }
   }
-  const {x:x1,y:y1} = polygonData[0];
+  const { x: x1, y: y1 } = polygonData[0];
   const { x: x2, y: y2 } = polygonData[1];
   const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
 
@@ -554,7 +553,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         />
 
         <text
-          x={SVG_SIZE / 2 - (playerCount <10 ? 30: 60)}
+          x={SVG_SIZE / 2 - (playerCount < 10 ? 30 : 60)}
           y={SVG_SIZE / 2 + 40}
           fill="black"
           style={{ fontFamily: "Arial", fontSize: "100px" }}
@@ -568,13 +567,11 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
             key={idx}
             onClick={() => handleAnimation(idx)}
             points={box}
-            fill={"white"
-              // (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
-              // (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
-              //   ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
-              //   : k === idx
-              //   ? "black"
-              //   : "white"
+            fill={
+              (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
+              (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
+                ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
+                : "white"
             }
             stroke="black"
             strokeWidth="1"
@@ -692,48 +689,43 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         )}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-        {markers.map((cord, idx) => (
-          idx===k&&<circle
-            key={idx}
-            cx={cord.tailCircle[0]}
-            cy={cord.tailCircle[1]}
-            r={(toggle ? 6 : 0) + boxRadius}
-            fill="none"
-            stroke="red"
-            strokeWidth="2"
-          />
-        ))}
-        {markers.map((cord, idx) => (
-          idx===k&&<polygon
-            key={idx}
-            points={cord.headCoordinates}
-            fill="white"
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
-        {markers.map((cord, idx) => (
-          idx===k&&<circle
-            key={idx}
-            cx={cord.headCircle[0]}
-            cy={cord.headCircle[1]}
-            r={(toggle ? 6 : 0) + boxRadius + 5}
-            fill="white"
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
-        {markers.map((cord, idx) => (
-          idx===k&&<circle
-            key={idx}
-            cx={cord.headCircle[0]}
-            cy={cord.headCircle[1]}
-            r={(toggle ? 6 : 0) + boxRadius + 2}
-            fill={numberWiseColor[(Math.floor(idx / 18) + 1) % 6]}
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
+        {markers.map((cord, idx) =>
+            idx === k && (
+              <circle
+                key={idx}
+                cx={cord.tailCircle[0]}
+                cy={cord.tailCircle[1]}
+                r={(toggle ? 4 : 0) + boxRadius}
+                fill="white"
+                stroke={!chakra ? "red" : "black"}
+                strokeWidth={toggle ? "5" : "3"}
+              />
+            )
+        )}
+        {markers.map((cord, idx) =>
+            idx === k && (
+              <polygon
+                key={idx}
+                points={cord.headCoordinates}
+                fill="white"
+                stroke="black"
+                strokeWidth="1"
+              />
+            )
+        )}
+        {markers.map((cord, idx) =>
+            idx === k && (
+              <circle
+                key={idx}
+                cx={cord.headCircle[0]}
+                cy={cord.headCircle[1]}
+                r={(toggle ? 4 : 0) + boxRadius}
+                fill={numberWiseColor[(Math.floor(idx / 18) + 1) % 6]}
+                stroke="black"
+                strokeWidth="1"
+              />
+            )
+        )}
       </svg>
     </div>
   );

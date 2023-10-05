@@ -5,9 +5,10 @@ import Body from './components/Body';
 import Socket from './Socket.js';
 import LudoBoard from './LudoBoard';
 import ThreeD from './ThreeD';
+import Test from './Test';
 
 const App = () => {
-  const [count, setCount] = useState(6);
+  const [count, setCount] = useState(8);
   //const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   // useEffect(()=>{
   //   const k = setInterval(()=>{setCount(pre=>pre+2)},[5000]);
@@ -43,7 +44,7 @@ const App = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-  console.log(SVG_SIZE);
+  // console.log(SVG_SIZE);
   return (
     <div className="App">
       {[...Array(34)].map((e,i)=>(i%2===0 && i>= 4 && <button onClick={()=>setCount(i)}><h1>{i}</h1></button>))}
@@ -53,6 +54,7 @@ const App = () => {
       <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
       {/* <ThreeD /> */}
       {/* <Main /> */}
+      {/* <Test/> */}
     </div>
   );
 }
