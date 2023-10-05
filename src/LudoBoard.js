@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 // Constants
-//const SVG_SIZE = 800;
 const POLYGON_SIZE = 100;
 
 function LudoBoard({ playerCount, SVG_SIZE }) {
