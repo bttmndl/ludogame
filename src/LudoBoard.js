@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
+import LudoCircle from "./components/LuduBoard/LudoCircle";
 
 // Constants
 const POLYGON_SIZE = 100;
 
 function LudoBoard({ playerCount, SVG_SIZE }) {
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
-  const [k, sk] = useState(45);
+  const [k, sk] = useState(0);
   const [t, setT] = useState(null);
   const [d, sd] = useState(20);
   const [f, sf] = useState(true);
@@ -20,10 +21,11 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   let kk = null;
   let kkk = null;
   let kkkk = null;
+
   useEffect(() => {
-    if (!k) {
+    if (k) {
       clearInterval(kk);
-      //if (k == t) sk(null);
+      if (k == t) sk(null);
       kk = setInterval(() => {
         sk((p) => (p + 1) % (playerCount * 18));
         setToggle(p=>!p)
@@ -33,6 +35,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     }
     return () => clearInterval(kk);
   }, [k]);
+
   useEffect(()=>{
     if(toggle){
       kkkk = setInterval(()=>{setChakra(p=>!p)},50);
@@ -543,14 +546,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           strokeWidth="2" // Outline width
         />
         {/* Draw the circle */}
-        <circle
-          cx={SVG_SIZE / 2}
-          cy={SVG_SIZE / 2}
-          r={CIRCLE_RADIUS}
-          fill="none"
-          stroke="blue"
-          strokeWidth="2"
-        />
+        <LudoCircle CIRCLE_RADIUS={CIRCLE_RADIUS} SVG_SIZE={SVG_SIZE} />
 
         <text
           x={SVG_SIZE / 2 - (playerCount < 10 ? 30 : 60)}
