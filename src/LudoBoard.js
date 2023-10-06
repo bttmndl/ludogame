@@ -567,13 +567,13 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
             key={idx}
             onClick={() => handleAnimation(idx)}
             points={box}
-            fill={"white"
-              // (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
-              // (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
-              //   ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
-              //   : k === idx
-              //   ? "black"
-              //   : "white"
+            fill={
+              (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
+              (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
+                ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
+                // : k === idx
+                // ? "black"
+                : "white"
             }
             stroke="black"
             strokeWidth="1"
