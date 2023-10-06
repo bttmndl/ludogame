@@ -1,22 +1,26 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import LudoCircle from "./components/LuduBoard/LudoCircle";
+import LudoTrianglePlayerBox from "./components/LuduBoard/LudoTrianglePlayerBox";
+import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
+import LudoMarkerGoti from "./components/LuduBoard/LudoMarkerGoti";
+import LudoWinBox from "./components/LuduBoard/LudoWinBox";
+import LudoPolygon from "./components/LuduBoard/LudoPolygon";
 
 // Constants
 const POLYGON_SIZE = 100;
 
 function LudoBoard({ playerCount, SVG_SIZE }) {
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
-  const [k, sk] = useState(0);
+  const [k, sk] = useState(null);
   const [t, setT] = useState(null);
-  const [d, sd] = useState(20);
   const [f, sf] = useState(true);
   const [toggle, setToggle] = useState(true);
   const [chakra, setChakra] =useState(false)
-
+  console.log(t, k);
   function handleAnimation(index) {
-    setT(Math.floor(Math.random() * 6) + 1 + index+90);
+    setT(Math.floor(Math.random() * 6) + 1 + index);
     sk(index);
-    setToggle(!toggle)
+    // setToggle(!toggle)
   }
   let kk = null;
   let kkk = null;
@@ -25,7 +29,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   useEffect(() => {
     if (k) {
       clearInterval(kk);
-      if (k == t) sk(null);
+      if (k === t) sk(null);
       kk = setInterval(() => {
         sk((p) => (p + 1) % (playerCount * 18));
         setToggle(p=>!p)
@@ -36,13 +40,13 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     return () => clearInterval(kk);
   }, [k]);
 
-  useEffect(()=>{
-    if(toggle){
-      kkkk = setInterval(()=>{setChakra(p=>!p)},50);
-    }
-    kkk=setInterval(()=>{setToggle(p=>!p)},2000);
-    return ()=>{clearInterval(kkk);clearInterval(kkkk)};
-  },[toggle])
+  // useEffect(()=>{
+  //   if(toggle){
+  //     kkkk = setInterval(()=>{setChakra(p=>!p)},50);
+  //   }
+  //   kkk=setInterval(()=>{setToggle(p=>!p)},2000);
+  //   return ()=>{clearInterval(kkk);clearInterval(kkkk)};
+  // },[toggle])
 
   const numberWiseColor = [
     "red",
@@ -83,12 +87,12 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   // Generate boxes from line coordinates for playerMove
   const boxes = useMemo(() => {
     return generateBoxesFromLineCoordinates();
-  }, [lineCoordinates, k]);
+  }, [lineCoordinates]);
 
   //genereting marker points for player move in boxes
   const markers = useMemo(() => {
     return generateDropdownMarker();
-  }, [boxes, toggle]);
+  }, [boxes]);
 
   // Generate triangle coordinates for player boxes
   const [triangleCoordsArray, triangleCoordsStringArray] = useMemo(() => {
@@ -113,6 +117,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   const starCords = useMemo(() => {
     return generateStarPolygon();
   }, [boxes]);
+
 
   //----------------------FUNCTIIONS------------------------------------
   function generatePolygonCoordinates(cx, cy, sides, size) {
@@ -526,9 +531,9 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       return coordinates;
     }
   }
-  const { x: x1, y: y1 } = polygonData[0];
-  const { x: x2, y: y2 } = polygonData[1];
-  const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
+  // const { x: x1, y: y1 } = polygonData[0];
+  // const { x: x2, y: y2 } = polygonData[1];
+  // const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
 
   console.log("k");
 
@@ -575,99 +580,39 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           />
         ))}
 
-        {/* Draw the polygon */}
-        <polygon
-          points={polygonData.map(({ x, y }) => `${x},${y}`).join(" ")}
-          fill="none"
-          stroke="green"
-          strokeWidth="2"
-        />
-
-        {/* Draw the amller polygon */}
-        <polygon
-          points={polygonDataSmall.map(({ x, y }) => `${x},${y}`).join(" ")}
-          fill="none"
-          stroke="green"
-          strokeWidth="2"
-        />
+        {/* Draw the fondation polygon of the board*/}
+        {/* <LudoPolygon 
+          polygonData={polygonData}
+          polygonDataSmall={polygonDataSmall}
+        /> */}
 
         {/* Draw the win box line */}
-        {winBoxCordLine.map((cord, idx) => (
-          <polygon
-            key={idx}
-            points={cord}
-            fill={numberWiseColor[(idx + 1) % playerCount]}
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
+        {/* <LudoWinBox 
+          winBoxCordLine ={winBoxCordLine}
+          numberWiseColor ={numberWiseColor}
+          playerCount ={playerCount}
+        /> */}
 
         {/* Render triangles for player House boxes */}
-        {triangleCoordsStringArray.map((cord, idx) => (
-          <polygon
-            key={idx}
-            points={cord}
-            fill="white"
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* Render inner triangles for player House boxes */}
-        {triangleInnerCordsArray.map((cord, idx) => (
-          <polygon
-            key={idx}
-            points={cord}
-            fill={numberWiseColor[idx]}
-            stroke="black"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* extra just for cover of design*/}
-        {circleCoordinates.map((cord, i) =>
-          cord.map(
-            (point, idx) =>
-              idx === 3 && (
-                <circle
-                  key={idx}
-                  cx={point[0]}
-                  cy={point[1]}
-                  r={30}
-                  fill="white"
-                />
-              )
-          )
-        )}
-
-        {/* Render circles for each player House boxes goti*/}
-        {circleCoordinates.map((cord, i) =>
-          cord.map((point, idx) => (
-            <circle
-              key={idx}
-              cx={point[0]}
-              cy={point[1]}
-              r={d}
-              stroke="black"
-              fill={numberWiseColor[i]}
-              strokeWidth="3"
-            />
-          ))
-        )}
+        {/* <LudoTrianglePlayerBox
+          triangleCoordsStringArray={triangleCoordsStringArray}
+          triangleInnerCordsArray={triangleInnerCordsArray}
+          numberWiseColor = {numberWiseColor}
+          circleCoordinates = {circleCoordinates}
+        /> */}
 
         {/* Render and marking special cells*/}
         {starCords.map((cord, idx) => (
-          <polygon
-            key={idx}
-            points={cord}
-            fill={numberWiseColor[(idx + 1) % playerCount]}
-            stroke={numberWiseColor[(idx + 1) % playerCount]}
-            strokeWidth="2"
+          <LudoStarBoxes
+            idx={idx}
+            cord={cord}
+            playerCount={playerCount}
+            numberWiseColor={numberWiseColor}
           />
         ))}
 
         {/* experiment*/}
-        {circleCoordinates.map((cord, i) =>
+        {/* {circleCoordinates.map((cord, i) =>
           cord.map(
             (point, idx) =>
               idx === 6 && (
@@ -682,46 +627,17 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
                 />
               )
           )
-        )}
+        )} */}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-        {markers.map((cord, idx) =>
-            idx === k && (
-              <circle
-                key={idx}
-                cx={cord.tailCircle[0]}
-                cy={cord.tailCircle[1]}
-                r={(toggle ? 4 : 0) + boxRadius}
-                fill="white"
-                stroke={!chakra ? "red" : "black"}
-                strokeWidth={toggle ? "5" : "3"}
-              />
-            )
-        )}
-        {markers.map((cord, idx) =>
-            idx === k && (
-              <polygon
-                key={idx}
-                points={cord.headCoordinates}
-                fill="white"
-                stroke="black"
-                strokeWidth="1"
-              />
-            )
-        )}
-        {markers.map((cord, idx) =>
-            idx === k && (
-              <circle
-                key={idx}
-                cx={cord.headCircle[0]}
-                cy={cord.headCircle[1]}
-                r={(toggle ? 4 : 0) + boxRadius}
-                fill={numberWiseColor[(Math.floor(idx / 18) + 1) % 6]}
-                stroke="black"
-                strokeWidth="1"
-              />
-            )
-        )}
+        {/* <LudoMarkerGoti 
+          markers ={markers}
+          k={k}
+          toggle={toggle}
+          boxRadius={boxRadius}
+          numberWiseColor={numberWiseColor}
+          chakra = {chakra}
+        /> */}
       </svg>
     </div>
   );
