@@ -531,9 +531,9 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       return coordinates;
     }
   }
-  // const { x: x1, y: y1 } = polygonData[0];
-  // const { x: x2, y: y2 } = polygonData[1];
-  // const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
+  const { x: x1, y: y1 } = polygonData[0];
+  const { x: x2, y: y2 } = polygonData[1];
+  const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
 
   console.log("k");
 
@@ -581,10 +581,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         ))}
 
         {/* Draw the fondation polygon of the board*/}
-        {/* <LudoPolygon 
-          polygonData={polygonData}
-          polygonDataSmall={polygonDataSmall}
-        /> */}
+        <LudoPolygon 
+          // polygonData={polygonData}
+          // polygonDataSmall={polygonDataSmall}
+        />
 
         {/* Draw the win box line */}
         {/* <LudoWinBox 
@@ -594,22 +594,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         /> */}
 
         {/* Render triangles for player House boxes */}
-        {/* <LudoTrianglePlayerBox
-          triangleCoordsStringArray={triangleCoordsStringArray}
-          triangleInnerCordsArray={triangleInnerCordsArray}
-          numberWiseColor = {numberWiseColor}
-          circleCoordinates = {circleCoordinates}
-        /> */}
+        <LudoTrianglePlayerBox/>
 
         {/* Render and marking special cells*/}
-        {starCords.map((cord, idx) => (
-          <LudoStarBoxes
-            idx={idx}
-            cord={cord}
-            playerCount={playerCount}
-            numberWiseColor={numberWiseColor}
-          />
-        ))}
+        <LudoStarBoxes />
 
         {/* experiment*/}
         {/* {circleCoordinates.map((cord, i) =>
@@ -630,14 +618,11 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         )} */}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-        {/* <LudoMarkerGoti 
-          markers ={markers}
-          k={k}
+        <LudoMarkerGoti 
           toggle={toggle}
-          boxRadius={boxRadius}
-          numberWiseColor={numberWiseColor}
+          k={k}
           chakra = {chakra}
-        /> */}
+        />
       </svg>
     </div>
   );
