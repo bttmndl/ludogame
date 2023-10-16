@@ -52,7 +52,7 @@ const App = () => {
       {/* <Socket /> */}
       <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
       {/* <ThreeD /> */}
-      {/* <Main /> */}
+      <Main />
     </div>
   );
 }
