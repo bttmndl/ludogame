@@ -1,6 +1,6 @@
-import React, { memo, useMemo } from 'react'
+import React, { memo, useEffect, useMemo, useState } from 'react'
 
-function LudoMarkerGoti({toggle, k, chakra}) {
+function LudoMarkerGoti() {
   const playerCount = 6;
   const POLYGON_SIZE = 100;
   const SVG_SIZE = 800;
@@ -12,6 +12,42 @@ function LudoMarkerGoti({toggle, k, chakra}) {
     "yellow",
     "purple",
   ];
+
+  const [currentBox, setCurrentBox] = useState(45);
+  const [destination, setDestination] = useState(null);
+  const [toggle, setToggle] = useState(true);
+  const [chakra, setChakra] = useState(false);
+
+  let markerGotiAnimation = null;
+  let chakraAnimation = null;
+  let zumpAnimation = null;
+  useEffect(() => {
+    if (currentBox) {
+      clearInterval(markerGotiAnimation);
+
+      if (currentBox === destination) setCurrentBox(null);
+
+      markerGotiAnimation = setInterval(() => {
+        setCurrentBox((p) => (p + 1) % (playerCount * 18));
+        setToggle((p) => !p);
+      }, [300]);
+    } else {
+      clearInterval(markerGotiAnimation);
+    }
+    return () => clearInterval(markerGotiAnimation);
+  }, [currentBox]);
+
+  useEffect(()=>{
+    if(toggle){
+      chakraAnimation = setInterval(() => {
+        setChakra((p) => !p);
+      }, 50);
+    }
+    zumpAnimation = setInterval(() => {
+      setToggle((p) => !p);
+    }, 2000);
+    return ()=>{clearInterval(zumpAnimation);clearInterval(chakraAnimation);};
+  },[toggle])
 
   const polygonData = useMemo(() => {
     return generatePolygonCoordinates(
@@ -35,7 +71,6 @@ function LudoMarkerGoti({toggle, k, chakra}) {
   const markers = useMemo(() => {
     return generateDropdownMarker();
   }, [boxes]);
-
 
   function generatePolygonCoordinates(cx, cy, sides, size) {
     console.log("generatePolygonCoordinates");
@@ -294,7 +329,7 @@ function LudoMarkerGoti({toggle, k, chakra}) {
       {/* rendering marker for player move, mrker ->haid,marker,tail*/}
       {markers?.map(
         (cord, idx) =>
-          idx === k && (
+          idx === currentBox && (
             <circle
               key={idx}
               cx={cord.tailCircle[0]}
@@ -308,7 +343,7 @@ function LudoMarkerGoti({toggle, k, chakra}) {
       )}
       {markers?.map(
         (cord, idx) =>
-          idx === k && (
+          idx === currentBox && (
             <polygon
               key={idx}
               points={cord.headCoordinates}
@@ -320,7 +355,7 @@ function LudoMarkerGoti({toggle, k, chakra}) {
       )}
       {markers?.map(
         (cord, idx) =>
-          idx === k && (
+          idx === currentBox && (
             <circle
               key={idx}
               cx={cord.headCircle[0]}

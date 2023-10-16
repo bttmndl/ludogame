@@ -46,13 +46,13 @@ const App = () => {
   // console.log(SVG_SIZE);
   return (
     <div className="App">
-      {/* {[...Array(34)].map((e,i)=>(i%2===0 && i>= 4 && <button onClick={()=>setCount(i)}><h1>{i}</h1></button>))} */}
+      {[...Array(34)].map((e,i)=>(i%2===0 && i>= 4 && <button onClick={()=>setCount(i)}><h1>{i}</h1></button>))}
       {/* <Header /> */}
       {/* <Body /> */}
       {/* <Socket /> */}
       <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
       {/* <ThreeD /> */}
-      {/* <Main /> */}
+      <Main />
       {/* <Test/> */}
     </div>
   );

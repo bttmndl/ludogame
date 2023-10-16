@@ -618,11 +618,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         )} */}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-        <LudoMarkerGoti 
-          toggle={toggle}
-          k={k}
-          chakra = {chakra}
-        />
+        <LudoMarkerGoti />
       </svg>
     </div>
   );
