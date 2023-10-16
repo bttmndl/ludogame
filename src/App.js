@@ -7,7 +7,7 @@ import LudoBoard from './LudoBoard';
 import ThreeD from './ThreeD';
 
 const App = () => {
-  const [count, setCount] = useState(6);
+  const [count, setCount] = useState(4);
   //const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   // useEffect(()=>{
   //   const k = setInterval(()=>{setCount(pre=>pre+2)},[5000]);
