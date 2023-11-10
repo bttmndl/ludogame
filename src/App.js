@@ -60,7 +60,7 @@ const App = () => {
             )
         )}
 
-        {/* <Header /> */}
+        <Header />
         {/* <Body /> */}
         {/* <Socket /> */}
         <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />

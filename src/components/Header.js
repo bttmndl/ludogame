@@ -1,6 +1,6 @@
 import React, {useState} from 'react'
-import SignUP from './SignUP';
 import '../App.css';
+import Authentication from "./Authentication"
 
 const headerStyle = {
     height: "8vh",
@@ -52,6 +52,8 @@ export const playButtonStyle = {
 };
 
 export default function Header() {
+const [flag, setFlag] = useState(false);
+console.log("flag", flag);
 
   return (
     <div style={headerStyle}>
@@ -69,10 +71,13 @@ export default function Header() {
           <li className="playButtonStyle">
             <button style={playButtonStyle}>Play Now</button>
           </li>
+          <li className="playButtonStyle">
+            <button style={playButtonStyle} onClick={()=>setFlag(!flag)}>Register</button>
+          </li>
         </ul>
       </div>
       <div style={signUpStyle}>
-        <SignUP />
+        { flag && <Authentication/> }
       </div>
     </div>
   );
