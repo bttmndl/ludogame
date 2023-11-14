@@ -1,12 +1,18 @@
 import React from 'react'
-import Form from './Form'
+import SignUpForm from './SignUpForm'
 
-const Signup = ({showComponent, setShowComponent}) => {
+const Signup = () => {
   return (
-    <div>
-        <Form showComponent={showComponent} setShowComponent={setShowComponent}/> 
+    <div style={SignupStyle}>
+        <SignUpForm/> 
     </div>
   )
+}
+
+const SignupStyle = {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
 }
 
 export default Signup

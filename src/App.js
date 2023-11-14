@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react'
-import Main from './Main';
-import Header from './components/Header';
-import Body from './components/Body';
-import Socket from './Socket.js';
-import LudoBoard from './LudoBoard';
-import ThreeD from './ThreeD';
+import React, { useEffect, useState } from "react";
+import Main from "./Main";
+import Header from "./components/Header";
+import Body from "./components/Body";
+import Socket from "./Socket.js";
+import LudoBoard from "./LudoBoard";
+import ThreeD from "./ThreeD";
 
 const App = () => {
   const [count, setCount] = useState(4);
@@ -47,10 +47,9 @@ const App = () => {
   return (
     <div
       className="App"
-      style={{ display: "flex", justifyContent: "space-around" }}
     >
       <div>
-        {[...Array(34)].map(
+        {/* {[...Array(34)].map(
           (e, i) =>
             i % 2 === 0 &&
             i >= 4 && (
@@ -58,17 +57,19 @@ const App = () => {
                 <h1>{i}</h1>
               </button>
             )
-        )}
+        )} */}
 
         <Header />
         {/* <Body /> */}
         {/* <Socket /> */}
-        <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
       </div>
       {/* <ThreeD /> */}
-      <Main />
+      {/* <div style={{ display: "flex", justifyContent: "space-around" }}>
+        <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
+        <Main />
+      </div> */}
     </div>
   );
-}
+};
 
 export default App;

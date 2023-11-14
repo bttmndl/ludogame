@@ -52,8 +52,7 @@ export const playButtonStyle = {
 };
 
 export default function Header() {
-const [flag, setFlag] = useState(false);
-console.log("flag", flag);
+const [registerPopUp, setRegisterPopUp] = useState(false);
 
   return (
     <div style={headerStyle}>
@@ -72,12 +71,12 @@ console.log("flag", flag);
             <button style={playButtonStyle}>Play Now</button>
           </li>
           <li className="playButtonStyle">
-            <button style={playButtonStyle} onClick={()=>setFlag(!flag)}>Register</button>
+            <button style={playButtonStyle} onClick={()=>setRegisterPopUp(true)}>Register</button>
           </li>
         </ul>
       </div>
       <div style={signUpStyle}>
-        { flag && <Authentication/> }
+        { registerPopUp && <Authentication setRegisterPopUp={setRegisterPopUp}/> }
       </div>
     </div>
   );

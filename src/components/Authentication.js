@@ -4,37 +4,26 @@ import Login from "./Login";
 import Signup from "./Signup";
 import AuthHeader from "./AuthHeader";
 
-const Authentication = () => {
-  const [showComponent, setShowComponent] = useState(false);
-
+const Authentication = ({ setRegisterPopUp }) => {
   return (
     <BrowserRouter>
       <div style={content}>
+        <div style={crossStyle}>
+          <button
+            style={crossButtonStyle}
+            onClick={() => setRegisterPopUp(false)}
+          >
+            X
+          </button>
+        </div>
+
         <div style={contentStyle}>
-          <AuthHeader
-            showComponent={showComponent}
-            setShowComponent={setShowComponent}
-          />
+          <AuthHeader />
+
           <div style={inner_style}>
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <Login
-                    showComponent={showComponent}
-                    setShowComponent={setShowComponent}
-                  />
-                }
-              />
-              <Route
-                path="/signup"
-                element={
-                  <Signup
-                    showComponent={showComponent}
-                    setShowComponent={setShowComponent}
-                  />
-                }
-              />
+              <Route path="/" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
             </Routes>
           </div>
         </div>
@@ -45,23 +34,43 @@ const Authentication = () => {
 
 const content = {
   position: "fixed",
-  top: "50%",
+  top: "54%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  border: "1px solid #ccc",
   borderRadius: "8px",
-  padding: "20px",
+  padding: "10px",
   backgroundColor: "white",
   zIndex: 999,
-  overflow: "auto",
-  maxWidth: "500px",
+  maxWidth: "600px",
 };
+
 const contentStyle = {
   border: "1px solid grey",
-  boxShadow: " 5px 5px 5px 5px #c9c3c3",
-  width: "526px",
-  padding: "5px",
+  boxShadow: " 1px 1px 1px 1px #c9c3c3",
+  padding: "5px 5px 15px 5px",
+  width: "480px",
+  borderRadius: "8px",
+  padding: "10px",
 };
+
+const crossStyle = {
+  height: "5px",
+  width: "12px",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  position:"relative",
+  left:"99%"
+};
+
+const crossButtonStyle = {
+  borderRadius: "50%",
+ 
+  backgroundColor: "black",
+  color: "#90EE90",
+  fontSize:"20px"
+};
+
 const inner_style = {
   display: "flex",
   justifyContent: "space-evenly",
