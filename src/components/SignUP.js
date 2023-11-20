@@ -1,13 +1,13 @@
 import React from 'react'
 import SignUpForm from './SignUpForm'
 
-const SignUp = () => {
+const SignUP = () => {
   return (
     <div style={SignupStyle}>
-        <SignUpForm/> 
+      <SignUpForm />
     </div>
-  )
-}
+  );
+};
 
 const SignupStyle = {
   display: "flex",
@@ -15,4 +15,4 @@ const SignupStyle = {
   alignItems: "center",
 }
 
-export default SignUp;
+export default SignUP;

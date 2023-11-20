@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./Login";
-// import SignUp from "./SignUp";
+import SignUP from "./SignUP";
 import AuthHeader from "./AuthHeader";
+
+
 
 const Authentication = ({ setRegisterPopUp }) => {
   return (
@@ -23,7 +25,7 @@ const Authentication = ({ setRegisterPopUp }) => {
           <div style={inner_style}>
             <Routes>
               <Route path="/" element={<Login />} />
-              {/* <Route path="/signup" element={<SignUp />} /> */}
+              <Route path="/signup" element={<SignUP/>} />
             </Routes>
           </div>
         </div>
