@@ -62,9 +62,9 @@ const LoginForm = () => {
                 alignItems: "center",
               }}
             >
-              <img src={google} style={{ height: "60px" }} />
-              <img src={facebook} style={{ height: "60px" }} />
-              <img src={twitter} style={{ height: "60px" }} />
+              <img src={google} style={socialLoginIconStyle} alt="google"/>
+              <img src={facebook} style={socialLoginIconStyle} alt="facebook"/>
+              <img src={twitter} style={socialLoginIconStyle} alt="twitter"/>
             </div>
           </div>
         </div>
@@ -91,6 +91,7 @@ const iconStyle = {
   top: "50%",
   transform: "translateY(-50%)",
   fontSize: "22px",
+  cursor: "pointer",
 };
 
 const inputStyle = {
@@ -128,5 +129,10 @@ const OrStyle = {
   marginTop: "20px",
   textAlign: "center",
 };
+
+const socialLoginIconStyle ={
+  height: "60px",
+  cursor:"pointer",
+}
 
 export default LoginForm;

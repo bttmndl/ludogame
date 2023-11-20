@@ -2,12 +2,44 @@ import React, {useState} from 'react'
 import '../App.css';
 import Authentication from "./Authentication"
 
-const headerStyle = {
-    height: "8vh",
-    display: "flex",
-    justifyContent: "space-around",
-    backgroundColor: "black",
+
+function Header() {
+  const [registerPopUp, setRegisterPopUp] = useState(false);
+
+  return (
+    <div style={headerStyle}>
+      <div style={brand_logo}>
+        <h3 style={{ fontFamily: "cursive" }}>LudoMania</h3>
+      </div>
+      <div style={header_list}>
+        <ul className="header_list_li" style={header_list_childs}>
+          <li>Home</li>
+          <li>About</li>
+          <li>FAQ</li>
+          <li>Advertise with us</li>
+          <li>Leaderboard</li>
+          <li>Contact</li>
+          <li className="playButtonStyle">
+            <button style={playButtonStyle}>Play Now</button>
+          </li>
+          <li className="playButtonStyle">
+            <button style={playButtonStyle} onClick={()=>setRegisterPopUp(true)}>Register</button>
+          </li>
+        </ul>
+      </div>
+      <div style={signUpStyle}>
+        { registerPopUp && <Authentication setRegisterPopUp={setRegisterPopUp}/> }
+      </div>
+    </div>
+  );
 }
+
+const headerStyle = {
+  height: "8vh",
+  display: "flex",
+  justifyContent: "space-around",
+  backgroundColor: "black",
+};
 
 const brand_logo = {
   width: "30%",
@@ -17,9 +49,9 @@ const brand_logo = {
 };
 
 const header_list = {
-    width: "60%",
-    paddingTop:"15px",
-}
+  width: "60%",
+  paddingTop: "15px",
+};
 
 const header_list_childs = {
   display: "flex",
@@ -51,33 +83,4 @@ export const playButtonStyle = {
   transition: "background 0.5s ease",
 };
 
-export default function Header() {
-const [registerPopUp, setRegisterPopUp] = useState(false);
-
-  return (
-    <div style={headerStyle}>
-      <div style={brand_logo}>
-        <h3 style={{ fontFamily: "cursive" }}>LudoMania</h3>
-      </div>
-      <div style={header_list}>
-        <ul className="header_list_li" style={header_list_childs}>
-          <li>Home</li>
-          <li>About</li>
-          <li>FAQ</li>
-          <li>Advertise with us</li>
-          <li>Leaderboard</li>
-          <li>Contact</li>
-          <li className="playButtonStyle">
-            <button style={playButtonStyle}>Play Now</button>
-          </li>
-          <li className="playButtonStyle">
-            <button style={playButtonStyle} onClick={()=>setRegisterPopUp(true)}>Register</button>
-          </li>
-        </ul>
-      </div>
-      <div style={signUpStyle}>
-        { registerPopUp && <Authentication setRegisterPopUp={setRegisterPopUp}/> }
-      </div>
-    </div>
-  );
-}
+export default Header;

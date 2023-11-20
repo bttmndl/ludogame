@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./Login";
-import Signup from "./Signup";
+import SignUp from "./SignUp";
 import AuthHeader from "./AuthHeader";
 
 const Authentication = ({ setRegisterPopUp }) => {
@@ -23,7 +23,7 @@ const Authentication = ({ setRegisterPopUp }) => {
           <div style={inner_style}>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              <Route path="/signup" element={<SignUp />} />
             </Routes>
           </div>
         </div>
@@ -38,7 +38,6 @@ const content = {
   left: "50%",
   transform: "translate(-50%, -50%)",
   borderRadius: "8px",
-  padding: "10px",
   backgroundColor: "white",
   zIndex: 999,
   maxWidth: "600px",
@@ -47,10 +46,9 @@ const content = {
 const contentStyle = {
   border: "1px solid grey",
   boxShadow: " 1px 1px 1px 1px #c9c3c3",
-  padding: "5px 5px 15px 5px",
+  padding: "26px 8px",
   width: "480px",
   borderRadius: "8px",
-  padding: "10px",
 };
 
 const crossStyle = {
@@ -65,7 +63,6 @@ const crossStyle = {
 
 const crossButtonStyle = {
   borderRadius: "50%",
- 
   backgroundColor: "black",
   color: "#90EE90",
   fontSize:"20px"

@@ -69,7 +69,7 @@ const iconStyle = {
   left: "10px", 
   top: "50%",
   transform: "translateY(-50%)",
-  fontSize:"22px"
+  fontSize:"22px",
 }
 
 const inputStyle = {
@@ -79,7 +79,6 @@ const inputStyle = {
   border: "1px solid #ccc",
   padding: "8px",
   textAlign:"center"
-  
 };
 
 const inputParentStyle = {
