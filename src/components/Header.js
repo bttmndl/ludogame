@@ -1,6 +1,6 @@
 import React, {useState} from 'react'
 import '../App.css';
-// import Authentication from "./Authentication"
+import Authentication from "./Authentication"
 
 
 function Header() {
@@ -28,7 +28,7 @@ function Header() {
         </ul>
       </div>
       <div style={signUpStyle}>
-        {/* { registerPopUp && <Authentication setRegisterPopUp={setRegisterPopUp}/> } */}
+        { registerPopUp && <Authentication setRegisterPopUp={setRegisterPopUp}/> }
       </div>
     </div>
   );

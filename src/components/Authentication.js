@@ -23,7 +23,7 @@ const Authentication = ({ setRegisterPopUp }) => {
           <div style={inner_style}>
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
+              {/* <Route path="/signup" element={<SignUp />} /> */}
             </Routes>
           </div>
         </div>
