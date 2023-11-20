@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./Login";
-import SignUp from "./SignUp";
+// import SignUp from "./SignUp";
 import AuthHeader from "./AuthHeader";
 
 const Authentication = ({ setRegisterPopUp }) => {
