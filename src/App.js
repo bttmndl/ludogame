@@ -43,7 +43,7 @@ const App = () => {
   //     window.removeEventListener("resize", handleResize);
   //   };
   // }, []);
-  // console.log(SVG_SIZE);
+  console.log(SVG_SIZE);
   return (
     <div className="App">
       {[...Array(34)].map((e,i)=>(i%2===0 && i>= 4 && <button onClick={()=>setCount(i)}><h1>{i}</h1></button>))}
@@ -51,9 +51,6 @@ const App = () => {
       {/* <Body /> */}
       {/* <Socket /> */}
       <LudoBoard playerCount={count} SVG_SIZE={SVG_SIZE} />
-      {/* <ThreeD /> */}
-      <Main />
-      {/* <Test/> */}
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import React from 'react'
 
-function LudoWinBox(props) {
+function LudoWinBox({winBoxCordLine, numberWiseColor, playerCount}) {
 
-  const {winBoxCordLine, numberWiseColor, playerCount} = props;
   return (
     <>
       {/* Draw the win box line */}

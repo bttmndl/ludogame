@@ -5,6 +5,7 @@ import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
 import LudoMarkerGoti from "./components/LuduBoard/LudoMarkerGoti";
 import LudoWinBox from "./components/LuduBoard/LudoWinBox";
 import LudoPolygon from "./components/LuduBoard/LudoPolygon";
+import LudoBoxes from "./components/LuduBoard/LudoBoxes";
 
 // Constants
 const POLYGON_SIZE = 100;
@@ -15,7 +16,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   const [t, setT] = useState(null);
   const [f, sf] = useState(true);
   const [toggle, setToggle] = useState(true);
-  const [chakra, setChakra] =useState(false)
+  const [chakra, setChakra] = useState(false);
   console.log(t, k);
   function handleAnimation(index) {
     setT(Math.floor(Math.random() * 6) + 1 + index);
@@ -32,7 +33,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       if (k === t) sk(null);
       kk = setInterval(() => {
         sk((p) => (p + 1) % (playerCount * 18));
-        setToggle(p=>!p)
+        setToggle((p) => !p);
       }, [300]);
     } else {
       clearInterval(kk);
@@ -56,8 +57,6 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     "yellow",
     "purple",
   ];
-
-  //................MEMOIZATION..........................................
 
   // Generate polygon coordinates
   const polygonData = useMemo(() => {
@@ -118,8 +117,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     return generateStarPolygon();
   }, [boxes]);
 
-
   //----------------------FUNCTIIONS------------------------------------
+
   function generatePolygonCoordinates(cx, cy, sides, size) {
     const coordinates = [];
 
@@ -155,6 +154,25 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     coordinates.push({ x: m1, y: n1 }, { x: m2, y: n2 });
 
     return coordinates;
+  }
+  function generateTwoMidPointsBetweenTwoPoints(x1, y1, x2, y2) {
+    // Calculate the direction vector from (x1, y1) to (x2, y2)
+    const dirX = x2 - x1;
+    const dirY = y2 - y1;
+
+    // Calculate the distance between (x1, y1) and (x2, y2)
+    const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+
+    // Calculate the coordinates of (x3, y3) and (x4, y4) at equal distances from the endpoints
+    const d = distance / 3; // Divide by 3 to get one-third of the distance
+
+    const x3 = x1 + (dirX * d) / distance;
+    const y3 = y1 + (dirY * d) / distance;
+
+    const x4 = x1 + (2 * dirX * d) / distance;
+    const y4 = y1 + (2 * dirY * d) / distance;
+
+    return [x3, y3, x4, y4];
   }
 
   //generating eachline cordinate
@@ -489,13 +507,13 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         .flat()
         .map((p) => parseFloat(p));
 
-      const [x1, y1, x2,y2, x3, y3,x4,y4] = point;
+      const [x1, y1, x2, y2, x3, y3, x4, y4] = point;
 
       const midX = (x1 + x3) / 2;
       const midY = (y1 + y3) / 2;
 
       // Define the size and appearance of the pin drop marker
-      const headRadius =toggle ? 20.3 :17.3 ; // calculating radius based on the width of the rectangle
+      const headRadius = toggle ? 20.3 : 17.3; // calculating radius based on the width of the rectangle
       const leftShift = toggle ? 55 : 35;
       // Generate the coordinates for the pin head
       const headCoordinates = generateCircleCoordinates(
@@ -505,7 +523,11 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         leftShift
       );
 
-      return {headCoordinates, headCircle: [midX-leftShift,midY], tailCircle: [midX,midY]};
+      return {
+        headCoordinates,
+        headCircle: [midX - leftShift, midY],
+        tailCircle: [midX, midY],
+      };
     }
 
     function generateCircleCoordinates(centerX, centerY, radius, leftShift) {
@@ -513,10 +535,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       const points = [];
 
       //intial marker starting point
-      points.push([centerX + leftShift+4, centerY]);
+      points.push([centerX + leftShift + 4, centerY]);
 
       for (let i = 0; i < numPoints; i++) {
-        if(i>=4 && i<=16) {
+        if (i >= 4 && i <= 16) {
           const angle = (i * Math.PI * 2) / numPoints;
           const x = centerX + radius * Math.cos(angle);
           const y = centerY + radius * Math.sin(angle);
@@ -533,7 +555,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   }
   const { x: x1, y: y1 } = polygonData[0];
   const { x: x2, y: y2 } = polygonData[1];
-  const boxRadius = Math.sqrt((x1 - x2)*(x1-x2) + (y1-y2)*(y1-y2)) / 3;
+  const boxRadius =
+    Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) / 3;
 
   console.log("k");
 
@@ -563,44 +586,42 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         </text>
 
         {/* main board each cell rendering for goti move*/}
-        {boxes.map((box, idx) => (
-          <polygon
-            key={idx}
-            onClick={() => handleAnimation(idx)}
-            points={box}
-            fill={
-              (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
-              (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
-                ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
-                : "white"
-            }
-            stroke="black"
-            strokeWidth="1"
-            style={{ cursor: "pointer" }}
-          />
-        ))}
+        <LudoBoxes
+          lineCoordinates={lineCoordinates}
+          handleAnimation={handleAnimation}
+          numberWiseColor={numberWiseColor}
+        />
 
-        {/* Draw the fondation polygon of the board*/}
-        <LudoPolygon 
-          // polygonData={polygonData}
-          // polygonDataSmall={polygonDataSmall}
+        {/* Draw the foundation polygon of the board*/}
+        <LudoPolygon
+          polygonData={polygonData}
+          polygonDataSmall={polygonDataSmall}
+        />
+
+        {/* Render triangles for player House boxes */}
+        <LudoTrianglePlayerBox
+          numberWiseColor={numberWiseColor}
+          triangleCoordsStringArray={triangleCoordsStringArray}
+          circleCoordinates={circleCoordinates}
+          triangleInnerCordsArray={triangleInnerCordsArray}
         />
 
         {/* Draw the win box line */}
-        {/* <LudoWinBox 
-          winBoxCordLine ={winBoxCordLine}
-          numberWiseColor ={numberWiseColor}
-          playerCount ={playerCount}
-        /> */}
-
-        {/* Render triangles for player House boxes */}
-        <LudoTrianglePlayerBox/>
+        <LudoWinBox
+          winBoxCordLine={winBoxCordLine}
+          numberWiseColor={numberWiseColor}
+          playerCount={playerCount}
+        />
 
         {/* Render and marking special cells*/}
-        <LudoStarBoxes />
+        <LudoStarBoxes
+          numberWiseColor={numberWiseColor}
+          playerCount={playerCount}
+          lineCoordinates={lineCoordinates}
+        />
 
         {/* experiment*/}
-        {/* {circleCoordinates.map((cord, i) =>
+        {circleCoordinates.map((cord, i) =>
           cord.map(
             (point, idx) =>
               idx === 6 && (
@@ -615,10 +636,15 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
                 />
               )
           )
-        )} */}
+        )}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-        <LudoMarkerGoti />
+        <LudoMarkerGoti
+          numberWiseColor={numberWiseColor}
+          polygonData={polygonData}
+          markers={markers}
+          playerCount={playerCount}
+        />
       </svg>
     </div>
   );
