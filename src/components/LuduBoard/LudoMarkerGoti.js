@@ -1,97 +1,142 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 
-function LudoMarkerGoti({numberWiseColor, polygonData, markers, playerCount}) {
-  
+/* ---------------- JUMP + SQUASH HELPER ---------------- */
+function getJumpTransform(from, to, t) {
+  // ease-in-out
+  const ease =
+    t < 0.5
+      ? 2 * t * t
+      : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
+  const x = from.x + (to.x - from.x) * ease;
+  const y = from.y + (to.y - from.y) * ease;
+
+  // jump arc
+  const jumpHeight = 28;
+  const lift = Math.sin(Math.PI * t) * jumpHeight;
+
+  // squash on landing
+  let scaleX = 1;
+  let scaleY = 1;
+
+  if (t > 0.85) {
+    const squash = (t - 0.85) / 0.15;
+    scaleX = 1 + squash * 0.25;
+    scaleY = 1 - squash * 0.25;
+  }
+
+  return {
+    x,
+    y: y - lift,
+    scaleX,
+    scaleY,
+  };
+}
+
+/* ---------------- COMPONENT ---------------- */
+function LudoMarkerGoti({
+  numberWiseColor,
+  polygonData,
+  markers,
+  playerCount,
+}) {
   const [currentBox, setCurrentBox] = useState(45);
-  const [destination, setDestination] = useState(null);
   const [toggle, setToggle] = useState(true);
-  const [chakra, setChakra] = useState(false);
 
-  let markerGotiAnimation = null;
-  let chakraAnimation = null;
-  let zumpAnimation = null;
+  const rafRef = useRef(null);
+
+  /* ---------------- JUMP ANIMATION ---------------- */
   useEffect(() => {
-    if (currentBox) {
-      clearInterval(markerGotiAnimation);
+    if (!polygonData?.length || !markers?.length) return;
+    if (currentBox === null) return;
 
-      if (currentBox === destination) setCurrentBox(null);
-
-      markerGotiAnimation = setInterval(() => {
-        setCurrentBox((p) => (p + 1) % (playerCount * 18));
-        setToggle((p) => !p);
-      }, [300]);
-    } else {
-      clearInterval(markerGotiAnimation);
-    }
-    return () => clearInterval(markerGotiAnimation);
-  }, [currentBox]);
-
-  useEffect(() => {
-    if (toggle) {
-      chakraAnimation = setInterval(() => {
-        setChakra((p) => !p);
-      }, 50);
-    }
-    zumpAnimation = setInterval(() => {
-      setToggle((p) => !p);
-    }, 2000);
-    return () => {
-      clearInterval(zumpAnimation);
-      clearInterval(chakraAnimation);
+    const from = {
+      x: markers[currentBox].headCircle[0],
+      y: markers[currentBox].headCircle[1],
     };
-  }, [toggle]);
 
+    const nextBox = (currentBox + 1) % (playerCount * 18);
 
+    const to = {
+      x: markers[nextBox].headCircle[0],
+      y: markers[nextBox].headCircle[1],
+    };
+
+    let start = null;
+    const duration = 240;
+
+    function frame(time) {
+      if (!start) start = time;
+      const t = Math.min((time - start) / duration, 1);
+
+      markers[currentBox].__jump = getJumpTransform(from, to, t);
+
+      setToggle((p) => !p);
+
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(frame);
+      } else {
+        delete markers[currentBox].__jump;
+        setCurrentBox(nextBox);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [currentBox, markers, polygonData, playerCount]);
+
+  /* ---------------- SAFE RENDER ---------------- */
+  if (!polygonData?.length || !markers?.length) return null;
+
+  const marker = markers[currentBox];
+  if (!marker) return null;
+
+  /* ---------------- RADIUS ---------------- */
   const { x: x1, y: y1 } = polygonData[0];
   const { x: x2, y: y2 } = polygonData[1];
   const boxRadius =
-    Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) / 3;
-  console.log("LudoMarkerGoti");
+    Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) / 3;
+
+  const baseX = marker.headCircle[0];
+  const baseY = marker.headCircle[1];
+  const jump = marker.__jump;
+
+  /* ---------------- RENDER ---------------- */
   return (
-    <>
-      {/* rendering marker for player move, mrker ->haid,marker,tail*/}
-      {markers?.map(
-        (cord, idx) =>
-          idx === currentBox && (
-            <circle
-              key={idx}
-              cx={cord.tailCircle[0]}
-              cy={cord.tailCircle[1]}
-              r={(toggle ? 4 : 0) + boxRadius}
-              fill="white"
-              stroke={!chakra ? "red" : "black"}
-              strokeWidth={toggle ? "5" : "3"}
-            />
-          )
-      )}
-      {markers?.map(
-        (cord, idx) =>
-          idx === currentBox && (
-            <polygon
-              key={idx}
-              points={cord.headCoordinates}
-              fill="white"
-              stroke="black"
-              strokeWidth="1"
-            />
-          )
-      )}
-      {markers?.map(
-        (cord, idx) =>
-          idx === currentBox && (
-            <circle
-              key={idx}
-              cx={cord.headCircle[0]}
-              cy={cord.headCircle[1]}
-              r={(toggle ? 4 : 0) + boxRadius}
-              fill={numberWiseColor[(Math.floor(idx / 18) + 1) % 6]}
-              stroke="black"
-              strokeWidth="1"
-            />
-          )
-      )}
-    </>
+    <g
+      transform={
+        jump
+          ? `
+            translate(${jump.x - baseX}, ${jump.y - baseY})
+            translate(${baseX}, ${baseY})
+            scale(${jump.scaleX}, ${jump.scaleY})
+            translate(${-baseX}, ${-baseY})
+          `
+          : undefined
+      }
+    >
+      {/* Polygon (carrier) */}
+      <polygon
+        points={marker.headCoordinates}
+        fill="white"
+        stroke="black"
+        strokeWidth="1"
+      />
+
+      {/* Circle fixed inside polygon */}
+      <circle
+        cx={baseX}
+        cy={baseY}
+        r={(toggle ? 4 : 0) + boxRadius}
+        fill={
+          numberWiseColor[
+            (Math.floor(currentBox / 18) + 1) % 6
+          ]
+        }
+        stroke="black"
+        strokeWidth="1"
+      />
+    </g>
   );
 }
 

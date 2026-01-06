@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import LudoCircle from "./components/LuduBoard/LudoCircle";
 import LudoTrianglePlayerBox from "./components/LuduBoard/LudoTrianglePlayerBox";
 import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
@@ -621,7 +621,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         />
 
         {/* experiment*/}
-        {circleCoordinates.map((cord, i) =>
+        {/* {circleCoordinates.map((cord, i) =>
           cord.map(
             (point, idx) =>
               idx === 6 && (
@@ -636,7 +636,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
                 />
               )
           )
-        )}
+        )} */}
 
         {/* rendering marker for player move, mrker ->haid,marker,tail*/}
         <LudoMarkerGoti
