@@ -2,7 +2,6 @@ import React, { memo, useEffect, useRef, useState } from "react";
 
 /* ---------------- JUMP + SQUASH HELPER ---------------- */
 function getJumpTransform(from, to, t) {
-  // ease-in-out
   const ease =
     t < 0.5
       ? 2 * t * t
@@ -11,11 +10,9 @@ function getJumpTransform(from, to, t) {
   const x = from.x + (to.x - from.x) * ease;
   const y = from.y + (to.y - from.y) * ease;
 
-  // jump arc
   const jumpHeight = 28;
   const lift = Math.sin(Math.PI * t) * jumpHeight;
 
-  // squash on landing
   let scaleX = 1;
   let scaleY = 1;
 
@@ -25,12 +22,7 @@ function getJumpTransform(from, to, t) {
     scaleY = 1 - squash * 0.25;
   }
 
-  return {
-    x,
-    y: y - lift,
-    scaleX,
-    scaleY,
-  };
+  return { x, y: y - lift, scaleX, scaleY };
 }
 
 /* ---------------- COMPONENT ---------------- */
@@ -39,16 +31,26 @@ function LudoMarkerGoti({
   polygonData,
   markers,
   playerCount,
+  moveRequest,
 }) {
-  const [currentBox, setCurrentBox] = useState(45);
-  const [toggle, setToggle] = useState(true);
+  const [currentBox, setCurrentBox] = useState(null);
+  const [stepsLeft, setStepsLeft] = useState(0);
+  const [jumpState, setJumpState] = useState(null);
+  const [trail, setTrail] = useState([]);
 
   const rafRef = useRef(null);
 
-  /* ---------------- JUMP ANIMATION ---------------- */
+  /* ---------------- INIT MOVE ---------------- */
   useEffect(() => {
-    if (!polygonData?.length || !markers?.length) return;
-    if (currentBox === null) return;
+    if (!moveRequest) return;
+
+    setCurrentBox(moveRequest.from);
+    setStepsLeft(moveRequest.steps);
+  }, [moveRequest]);
+
+  /* ---------------- STEP BY STEP MOVE ---------------- */
+  useEffect(() => {
+    if (stepsLeft <= 0 || currentBox === null) return;
 
     const from = {
       x: markers[currentBox].headCircle[0],
@@ -63,59 +65,76 @@ function LudoMarkerGoti({
     };
 
     let start = null;
-    const duration = 240;
+    const duration = 260;
 
     function frame(time) {
       if (!start) start = time;
       const t = Math.min((time - start) / duration, 1);
 
-      markers[currentBox].__jump = getJumpTransform(from, to, t);
+      const nextJump = getJumpTransform(from, to, t);
+      setJumpState(nextJump);
 
-      setToggle((p) => !p);
+      setTrail((prev) => {
+        const updated = [...prev, nextJump];
+        return updated.length > 6 ? updated.slice(-6) : updated;
+      });
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(frame);
       } else {
-        delete markers[currentBox].__jump;
+        setJumpState(null);
+        setTrail([]);
         setCurrentBox(nextBox);
+        setStepsLeft((s) => s - 1);
       }
     }
 
     rafRef.current = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [currentBox, markers, polygonData, playerCount]);
+  }, [stepsLeft, currentBox, markers, playerCount]);
 
-  /* ---------------- SAFE RENDER ---------------- */
-  if (!polygonData?.length || !markers?.length) return null;
+  if (currentBox === null || !markers[currentBox]) return null;
 
   const marker = markers[currentBox];
-  if (!marker) return null;
-
-  /* ---------------- RADIUS ---------------- */
-  const { x: x1, y: y1 } = polygonData[0];
-  const { x: x2, y: y2 } = polygonData[1];
-  const boxRadius =
-    Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) / 3;
-
   const baseX = marker.headCircle[0];
   const baseY = marker.headCircle[1];
-  const jump = marker.__jump;
 
-  /* ---------------- RENDER ---------------- */
   return (
     <g
       transform={
-        jump
+        jumpState
           ? `
-            translate(${jump.x - baseX}, ${jump.y - baseY})
+            translate(${jumpState.x - baseX}, ${jumpState.y - baseY})
             translate(${baseX}, ${baseY})
-            scale(${jump.scaleX}, ${jump.scaleY})
+            scale(${jumpState.scaleX}, ${jumpState.scaleY})
             translate(${-baseX}, ${-baseY})
           `
           : undefined
       }
     >
-      {/* Polygon (carrier) */}
+      {/* Shadow */}
+      {jumpState && (
+        <ellipse
+          cx={baseX}
+          cy={baseY + 6}
+          rx={14 * (1 - Math.abs(jumpState.y - baseY) / 60)}
+          ry={6}
+          fill="rgba(0,0,0,0.25)"
+        />
+      )}
+
+      {/* Motion trail */}
+      {trail.map((p, i) => (
+        <circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={10 - i}
+          fill="rgba(0,0,0,0.15)"
+        />
+      ))}
+
+      {/* Polygon carrier */}
       <polygon
         points={marker.headCoordinates}
         fill="white"
@@ -123,14 +142,14 @@ function LudoMarkerGoti({
         strokeWidth="1"
       />
 
-      {/* Circle fixed inside polygon */}
+      {/* Goti */}
       <circle
         cx={baseX}
         cy={baseY}
-        r={(toggle ? 4 : 0) + boxRadius}
+        r={14}
         fill={
           numberWiseColor[
-            (Math.floor(currentBox / 18) + 1) % 6
+            Math.floor(currentBox / 18) % numberWiseColor.length
           ]
         }
         stroke="black"
