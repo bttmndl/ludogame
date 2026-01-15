@@ -1,18 +1,10 @@
-export function generateDropdownMarker(boxes) {
-    return boxes.map((cord) => generateCords(cord));
+export function generateHomeDropdownMarker(circleCoordinates) {
+    return circleCoordinates.map((cord) => cord.map((c)=>generateCords(c)));
 
-    function generateCords(rectanglePoints) {
-      //converting cord from string array of floats
-      const point = rectanglePoints
-        .split(" ")
-        .map((cord) => cord.split(","))
-        .flat()
-        .map((p) => parseFloat(p));
+    function generateCords(point) {
+      
 
-      const [x1, y1, x2, y2, x3, y3, x4, y4] = point;
-
-      const midX = (x1 + x3) / 2;
-      const midY = (y1 + y3) / 2;
+      const [midX,midY] = point;
 
       // Define the size and appearance of the pin drop marker
       const headRadius = 20.3;// calculating radius based on the width of the rectangle

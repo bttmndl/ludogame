@@ -15,24 +15,119 @@ import { generateInnerTriangleCordForPlayerBox } from "./geometry/innerTriangle"
 import { generateStarPolygon } from "./geometry/star";
 import { generateWinBoxCord } from "./geometry/winbox";
 import { generateCircleCordForPlayer } from "./geometry/circle";
+import { generateHomeDropdownMarker } from "./geometry/homeMarkers";
 
 // Constants
 const POLYGON_SIZE = 100;
 
+/* ================= DYNAMIC HELPERS ================= */
+
+function generatePlayers(playerCount, totalCells) {
+  const step = totalCells / playerCount; // 18
+  return Array.from({ length: playerCount }, (_, i) => ({
+    id: i,
+    start: i * step,
+  }));
+}
+
+function generateSafeCells(players, totalCells) {
+  return players.map((p) => (p.start + 3) % totalCells);
+}
+
+function createInitialGotis(players) {
+  const gotis = [];
+  players.forEach((p) => {
+    for (let i = 0; i < 4; i++) {
+      gotis.push({
+        id: `${p.id}-${i}`,
+        playerId: p.id,
+        position: -1, // home
+        finished: false,
+      });
+    }
+  });
+  return gotis;
+}
+
 function LudoBoard({ playerCount, SVG_SIZE }) {
+  const TOTAL_CELLS = playerCount * 18;
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
 
-  /* ================= STATE ================= */
+  const PLAYERS = useMemo(
+    () => generatePlayers(playerCount, TOTAL_CELLS),
+    [playerCount, TOTAL_CELLS]
+  );
+
+  const SAFE_CELLS = useMemo(
+    () => generateSafeCells(PLAYERS, TOTAL_CELLS),
+    [PLAYERS, TOTAL_CELLS]
+  );
+
+  /* ---------- GAME STATE ---------- */
+
+  const [game, setGame] = useState(() => ({
+    currentPlayer: 0,
+    dice: null,
+    gotis: createInitialGotis(PLAYERS),
+    winner: null,
+  }));
 
   const [moveRequest, setMoveRequest] = useState(null);
-  const [pulseToggle, setPulseToggle] = useState(true);
 
+  function onMoveComplete(gotiId, finalBox) {
+    setGame((prev) => {
+      let gotis = [...prev.gotis];
 
-  function handleAnimation(startIndex) {
+      // 1️⃣ Move the goti
+      gotis = gotis.map((g) =>
+        g.id === gotiId ? { ...g, position: finalBox } : g
+      );
+
+      // 2️⃣ Check EAT (only if not safe cell)
+      const isSafe = SAFE_CELLS.includes(finalBox);
+
+      if (!isSafe) {
+        gotis = gotis.map((g) => {
+          if (
+            g.position === finalBox &&
+            g.id !== gotiId &&
+            g.playerId !== prev.currentPlayer
+          ) {
+            // eaten → go home
+            return { ...g, position: -1 };
+          }
+          return g;
+        });
+      }
+
+      // 3️⃣ Change turn (unless dice was 6)
+      const nextPlayer =
+        prev.dice === 6
+          ? prev.currentPlayer
+          : (prev.currentPlayer + 1) % PLAYERS.length;
+
+      return {
+        ...prev,
+        gotis,
+        dice: null,
+        currentPlayer: nextPlayer,
+      };
+    });
+
+    // 4️⃣ Clear move request
+    setMoveRequest(null);
+  }
+
+  function handleAnimation(gotiId) {
     const diceValue = Math.floor(Math.random() * 6) + 1;
 
+    setGame((prev) => ({
+      ...prev,
+      dice: diceValue,
+    }));
+
     setMoveRequest({
-      from: startIndex,
+      gotiId,
       steps: diceValue,
     });
   }
@@ -79,8 +174,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   }, [lineCoordinates]);
 
   const markers = useMemo(() => {
-    return generateDropdownMarker(boxes, pulseToggle);
-  }, [boxes, pulseToggle]);
+    return generateDropdownMarker(boxes);
+  }, [boxes]);
 
   const [triangleCoordsArray, triangleCoordsStringArray] = useMemo(() => {
     return generateTriangleCordForPlayerBox(lineCoordinates);
@@ -93,6 +188,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   const circleCoordinates = useMemo(() => {
     return generateCircleCordForPlayer(triangleCoordsArray);
   }, [triangleCoordsArray]);
+
+  const homeMarkers = useMemo(() => {
+    return generateHomeDropdownMarker(circleCoordinates);
+  }, [circleCoordinates]);
 
   const winBoxCordLine = useMemo(() => {
     return generateWinBoxCord(polygonData, polygonDataSmall);
@@ -107,7 +206,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   const boxRadius =
     Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) / 3;
 
-  console.log("k");
+  console.log(homeMarkers)
 
   return (
     <div>
@@ -164,11 +263,14 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         />
 
         <LudoMarkerGoti
-          numberWiseColor={numberWiseColor}
-          polygonData={polygonData}
+          gotis={game.gotis}
           markers={markers}
-          playerCount={playerCount}
+          homeMarkers={homeMarkers}
+          circleCoordinates={circleCoordinates}
           moveRequest={moveRequest}
+          onMoveComplete={onMoveComplete}
+          numberWiseColor={numberWiseColor}
+          playerCount={playerCount}
         />
       </svg>
     </div>
