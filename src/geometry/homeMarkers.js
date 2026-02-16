@@ -7,8 +7,8 @@ export function generateHomeDropdownMarker(circleCoordinates) {
       const [midX,midY] = point;
 
       // Define the size and appearance of the pin drop marker
-      const headRadius = 20.3;// calculating radius based on the width of the rectangle
-      const leftShift =  55;
+      const headRadius = 18;// calculating radius based on the width of the rectangle
+      const leftShift =  40;
       // Generate the coordinates for the pin head
       const headCoordinates = generateCircleCoordinates(
         midX - leftShift,
@@ -19,7 +19,7 @@ export function generateHomeDropdownMarker(circleCoordinates) {
 
       return {
         headCoordinates,
-        headCircle: [midX - leftShift, midY],
+        headCircle: [midX-leftShift , midY],
         tailCircle: [midX, midY],
       };
     }
@@ -29,7 +29,7 @@ export function generateHomeDropdownMarker(circleCoordinates) {
       const points = [];
 
       //intial marker starting point
-      points.push([centerX + leftShift + 4, centerY]);
+      points.push([centerX + leftShift + 1, centerY]);
 
       for (let i = 0; i < numPoints; i++) {
         if (i >= 4 && i <= 16) {
@@ -39,7 +39,7 @@ export function generateHomeDropdownMarker(circleCoordinates) {
           points.push([x, y]);
         }
       }
-      points.push([centerX + leftShift + 4, centerY]);
+      points.push([centerX + leftShift, centerY]);
 
       // Convert the points array back to a single string
       const coordinates = points.map((point) => point.join(",")).join(" ");

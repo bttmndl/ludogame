@@ -44,6 +44,8 @@ function LudoMarkerGoti({
   onMoveComplete,
   numberWiseColor,
   playerCount,
+  currentPlayer,
+  handleAnimation
 }) {
   const [activeGotiId, setActiveGotiId] = useState(null);
   const [stepsLeft, setStepsLeft] = useState(0);
@@ -56,8 +58,8 @@ function LudoMarkerGoti({
   useEffect(() => {
     if (!moveRequest) return;
 
-    const g = gotis.find((g) => g.id === moveRequest.gotiId);
-    if (!g || g.position < 0) return;
+    const g = gotis.find((g) => g.id == moveRequest.gotiId);
+    if (!g) return;
 
     setActiveGotiId(moveRequest.gotiId);
     setStepsLeft(moveRequest.steps);
@@ -69,7 +71,17 @@ function LudoMarkerGoti({
     if (!activeGotiId || stepsLeft <= 0 || animatedBox === null) return;
 
     const fromBox = animatedBox;
-    const nextBox = (fromBox + 1) % (playerCount * 18);
+    const nextBox = fromBox % 18 === 6 ? (fromBox + 6 )%(playerCount*18) 
+      : (fromBox + 1) % (playerCount * 18);
+
+    if (!markers[fromBox] || !markers[nextBox]) {
+      // Safety check: if markers are missing, finish animation immediately
+      setAnimatedBox(nextBox);
+      setStepsLeft(0);
+      onMoveComplete(activeGotiId, nextBox);
+      setActiveGotiId(null);
+      return;
+    }
 
     const from = {
       x: markers[fromBox].headCircle[0],
@@ -115,6 +127,10 @@ function LudoMarkerGoti({
     onMoveComplete,
   ]);
 
+  function isSelectable(goti, currentPlayer) {
+    return goti.playerId == currentPlayer && !goti.finished;
+  }
+
   /* ---------- GROUP GOTIS ---------- */
   const boardGotisByCell = {};
   const homeGotisByPlayer = {};
@@ -130,7 +146,6 @@ function LudoMarkerGoti({
   });
 
   /* ---------- RENDER ---------- */
-  
   return (
     <>
       {/* -------- HOME GOTIS (TRIANGLE) -------- */}
@@ -143,19 +158,27 @@ function LudoMarkerGoti({
           const homeMarker = homeMarkers[playerId][index];
 
           return (
-            <g>
+            <g key={goti.id}>
               <polygon
                 points={homeMarker.headCoordinates}
-                fill="white"
+                fill="grey"
                 stroke="black"
               />
 
               <circle
-                cx={x}
+                cx={x - 40}
                 cy={y}
-                r={14}
+                r={13}
                 fill={numberWiseColor[goti.playerId]}
                 stroke="black"
+                style={{
+                  cursor: isSelectable(goti, currentPlayer) ? "pointer" : "default",
+                  opacity: isSelectable(goti, currentPlayer) ? 1 : 0.4,
+                }}
+                onClick={() => {
+                  if (!isSelectable(goti, currentPlayer) || moveRequest) return;
+                  handleAnimation(goti.id);
+                }}
               />
             </g>
           );
@@ -172,22 +195,29 @@ function LudoMarkerGoti({
 
         return cellGotis.map((goti, index) => {
           const { dx, dy } = getGotiOffset(index, cellGotis.length);
-          const isActive = goti.id === activeGotiId;
+          const isActive = goti.id == activeGotiId;
           const jump = isActive ? jumpState : null;
+          let transform = undefined;
 
-          return (
-            <g
-              key={goti.id}
-              transform={
-                jump
-                  ? `
+          if (isActive) {
+            if (jump) {
+              transform = `
                     translate(${jump.x - baseX}, ${jump.y - baseY})
                     translate(${baseX}, ${baseY})
                     scale(${jump.scaleX}, ${jump.scaleY})
                     translate(${-baseX}, ${-baseY})
-                  `
-                  : undefined
-              }
+                  `;
+            } else if (animatedBox !== null && animatedBox != boxIndex && markers[animatedBox]) {
+              // Keep position between steps
+              const dest = markers[animatedBox].headCircle;
+              transform = `translate(${dest[0] - baseX}, ${dest[1] - baseY})`;
+            }
+          }
+
+          return (
+            <g
+              key={goti.id}
+              transform={transform}
             >
               {jump && (
                 <ellipse
@@ -211,6 +241,14 @@ function LudoMarkerGoti({
                 r={14}
                 fill={numberWiseColor[goti.playerId]}
                 stroke="black"
+                style={{
+                  cursor: isSelectable(goti, currentPlayer) ? "pointer" : "default",
+                  opacity: isSelectable(goti, currentPlayer) ? 1 : 0.4,
+                }}
+                onClick={() => {
+                  if (!isSelectable(goti, currentPlayer) || moveRequest) return;
+                  handleAnimation(goti.id); // already exists in board
+                }}
               />
             </g>
           );

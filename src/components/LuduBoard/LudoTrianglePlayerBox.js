@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 
 function LudoTrianglePlayerBox({numberWiseColor, triangleCoordsStringArray, circleCoordinates,triangleInnerCordsArray}) {
   
-  console.log("triangle");
+  
   return (
     <>
       {/* Render outer triangles for player House boxes */}
@@ -43,20 +43,7 @@ function LudoTrianglePlayerBox({numberWiseColor, triangleCoordsStringArray, circ
         )
       )}
 
-      {/* Render circles for each player House boxes goti*/}
-      {circleCoordinates.map((cord, i) =>
-        cord.map((point, idx) => (
-          <circle
-            key={idx}
-            cx={point[0]}
-            cy={point[1]}
-            r={15}
-            stroke="black"
-            fill={numberWiseColor[i]}
-            strokeWidth="3"
-          />
-        ))
-      )}
+      
     </>
   );
 }

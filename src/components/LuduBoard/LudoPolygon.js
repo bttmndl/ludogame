@@ -3,7 +3,7 @@ import React from 'react'
 function LudoPolygon( {polygonData, polygonDataSmall}) {
 
 
-  console.log("ludopolygon");
+  
   return (
     <>
       {/* Draw the polygon */}
