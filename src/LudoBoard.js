@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import LudoCircle from "./components/LuduBoard/LudoCircle";
 import LudoTrianglePlayerBox from "./components/LuduBoard/LudoTrianglePlayerBox";
 import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
@@ -12,13 +12,13 @@ import { generateBoxesFromLineCoordinates } from "./geometry/boxes";
 import { generateDropdownMarker } from "./geometry/markers";
 import { generateTriangleCordForPlayerBox } from "./geometry/triangles";
 import { generateInnerTriangleCordForPlayerBox } from "./geometry/innerTriangle";
-import { generateStarPolygon } from "./geometry/star";
 import { generateWinBoxCord } from "./geometry/winbox";
 import { generateCircleCordForPlayer } from "./geometry/circle";
 import { generateHomeDropdownMarker } from "./geometry/homeMarkers";
 
 // Constants
 const POLYGON_SIZE = 80;
+
 
 /* ================= DYNAMIC HELPERS ================= */
 
@@ -30,9 +30,11 @@ function generatePlayers(playerCount, totalCells) {
   }));
 }
 
-function generateSafeCells(players, totalCells) {
+function generateSafeCells(players) {
   // The starting positions are the safe cells.
-  return players.map((p) => p.start);
+  const res = [];
+  players.forEach((p) => res.push(p.start-1, (p.start + 7) % (18 * players.length)));
+  return res;
 }
 
 function createInitialGotis(players) {
@@ -51,10 +53,8 @@ function createInitialGotis(players) {
 }
 
 function LudoBoard({ playerCount, SVG_SIZE }) {
-  const TOTAL_CELLS = playerCount * 18;
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
-  const HOME_LANE_LENGTH = 7; // 6 squares to move on + 1 winning spot
-
+  const TOTAL_CELLS = playerCount * 18;
   const [isRolling, setIsRolling] = useState(false);
 
   const PLAYERS = useMemo(
@@ -63,8 +63,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   );
 
   const SAFE_CELLS = useMemo(
-    () => generateSafeCells(PLAYERS, TOTAL_CELLS),
-    [PLAYERS, TOTAL_CELLS],
+    () => generateSafeCells(PLAYERS),
+    [PLAYERS],
   );
 
   /* ---------- GAME STATE ---------- */
@@ -195,6 +195,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       }
 
       const newPosition = path[path.length - 1];
+      
       return {
         path,
         newPosition,
@@ -203,24 +204,22 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       };
     }
 
-    
-
     // 3. Moving on main track
     const path = [];
     let currentPos = goti.position;
-    const canEnterHome = player.start - currentPos < 12 && player.start - currentPos > 0;
-    
+    const canEnterHome =
+      player.start - currentPos <= 12 && player.start - currentPos > 0;
 
     // 2. Already in home lane
     if (canEnterHome) {
-      if (currentPos + dice > player.start -1) return null; // Overshot
-      const finished = currentPos + dice === player.start -1;
-      const homePath = Array.from(
-        { length: dice },
-        (_, i) => goti.position + i,
-      );
+      if (currentPos + dice >= player.start - 1) return null; // Overshot
+      const finished = currentPos + dice === player.start - 2;
+      for (let i = 0; i < dice; i++) {
+        currentPos = (currentPos + 1) % TOTAL_CELLS;
+        path.push(currentPos);
+      }
       const newPosition = goti.position + dice;
-      return { homePath, newPosition, finished, ate: hasOpponent(newPosition) };
+      return { path, newPosition, finished, ate: hasOpponent(newPosition) };
     }
 
     for (let i = 0; i < dice; i++) {
@@ -263,6 +262,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     - Dice Roll: ${game.dice}
     - Calculated Path: [${move?.path?.join(" -> ")}]
     - Final Position: ${move.newPosition}
+    - Finished: ${move.finished}
+    - Ate: ${move.ate}
     --------------------------`);
 
     // 4. Set up the animation request
@@ -276,14 +277,12 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
 
   /* ================= COLORS ================= */
 
-  const numberWiseColor = [
-    "red",
-    "green",
-    "orange",
-    "blue",
-    "yellow",
-    "purple",
-  ];
+  const numberWiseColor = useMemo(() => {
+  return Array.from({ length: playerCount }, (_, i) => {
+    const hue = (i * 360) / playerCount;
+    return `hsl(${hue}, 70%, 50%)`;
+  });
+}, [playerCount]);
 
   /* ================= GEOMETRY ================= */
 
@@ -303,7 +302,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       SVG_SIZE / 2,
       SVG_SIZE / 2,
       playerCount,
-      POLYGON_SIZE / 1.4,
+      POLYGON_SIZE / 1.7,
     );
   }, [playerCount, SVG_SIZE]);
 
@@ -316,22 +315,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   }, [lineCoordinates]);
 
   const markers = useMemo(() => {
-    const homeLaneMarkers = {};
-    // NOTE RE: Goti Path: The following loop prepares for home lane markers.
-    // However, for the gotis to be VISIBLE on the home path, the geometry files
-    // (e.g., in /src/geometry/) must be updated to provide real coordinates
-    // for these special home-lane positions (e.g., position > TOTAL_CELLS).
-    // The game logic below correctly handles movement into the home lane, but
-    // the goti may seem to disappear or jump because it has no coordinate to render on.
-    for (let p = 0; p < playerCount; p++) {
-      for (let i = 0; i < HOME_LANE_LENGTH; i++) {
-        const pos = TOTAL_CELLS + p * HOME_LANE_LENGTH + i;
-        // To fix rendering, you would add coordinates here like so:
-        // homeLaneMarkers[pos] = { x: ..., y: ... };
-      }
-    }
-    return { ...generateDropdownMarker(boxes), ...homeLaneMarkers };
-  }, [boxes, playerCount, TOTAL_CELLS]);
+    return generateDropdownMarker(boxes);
+  }, [boxes]);
 
   // --- DEBUG LOGGING ---
   useEffect(() => {
@@ -362,10 +347,10 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     return generateWinBoxCord(polygonData, polygonDataSmall);
   }, [polygonData, polygonDataSmall]);
 
-  const starCords = useMemo(() => {
-    return generateStarPolygon(boxes, playerCount);
-  }, [boxes, playerCount]);
-
+  // const starCords = useMemo(() => {
+  //   return generateStarPolygon(boxes, playerCount);
+  // }, [boxes, playerCount]);f
+  console.log("gotis", game.gotis)
   return (
     <div>
       <svg width={SVG_SIZE} height={SVG_SIZE}>
@@ -429,27 +414,6 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           numberWiseColor={numberWiseColor}
         />
 
-        {/* --- DEBUG: Show position numbers on board --- */}
-        {Object.entries(markers).map(([pos, { x, y }]) => {
-          if (pos < TOTAL_CELLS) {
-            return (
-              <text
-                key={`marker-pos-${pos}`}
-                x={x}
-                y={y}
-                fontSize="8"
-                fill="black"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ pointerEvents: "none" }}
-              >
-                {pos}
-              </text>
-            );
-          }
-          return null;
-        })}
-
         <LudoPolygon
           polygonData={polygonData}
           polygonDataSmall={polygonDataSmall}
@@ -485,6 +449,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           playerCount={playerCount}
           currentPlayer={game.currentPlayer}
           handleAnimation={handleAnimation}
+          PLAYERS={PLAYERS}
         />
       </svg>
     </div>
