@@ -13,10 +13,12 @@
     "socket.io-client": "^4.6.0",
     "three": "^0.156.1",
     "universal-cookie": "^4.0.4",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "ws": "^7.5.9"
   },
   "scripts": {
     "start": "react-scripts start",
+    "server": "node server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

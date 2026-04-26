@@ -15,4 +15,628 @@
     background-image: url("./assets/bodybgImage.jpg");
 } */
 
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+}
+
+body {
+    overflow-x: hidden;
+    background: #eef2f5;
+    color: #15171a;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.App {
+    --app-padding: clamp(8px, 2vmin, 18px);
+    --header-height: 72px;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 520px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    justify-items: center;
+    gap: clamp(8px, 1.6vmin, 16px);
+    padding: var(--app-padding);
+    background:
+        radial-gradient(circle at 15% 10%, rgba(250, 204, 21, 0.18), transparent 28%),
+        radial-gradient(circle at 90% 20%, rgba(20, 184, 166, 0.16), transparent 24%),
+        linear-gradient(135deg, #f8fafc 0%, #e8edf2 100%);
+    overflow: hidden;
+}
+
+.appHeader {
+    position: relative;
+    z-index: 30;
+    width: min(1180px, 100%);
+    min-height: var(--header-height);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(17, 24, 39, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.11);
+    backdrop-filter: blur(14px);
+    overflow: visible;
+}
+
+.brandBlock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.brandMark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #111827;
+    color: #facc15;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: inset 0 -3px 0 rgba(250, 204, 21, 0.22);
+}
+
+.brandBlock strong {
+    display: block;
+    font-size: clamp(18px, 2.2vw, 23px);
+    line-height: 1.05;
+}
+
+.brandBlock small {
+    display: block;
+    margin-top: 4px;
+    color: #667085;
+    font-size: 13px;
+}
+
+.topNav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+}
+
+.menuButton {
+    display: none;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-direction: column;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.menuButton span {
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #111827;
+}
+
+.navRoomInput,
+.navButton {
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    padding: 0 12px;
+    font: inherit;
+}
+
+.navRoomInput {
+    width: 132px;
+    min-width: 0;
+    background: #f8fafc;
+    text-transform: uppercase;
+}
+
+.navButton {
+    cursor: pointer;
+    background: #fff;
+    color: #111827;
+    font-weight: 700;
+    white-space: nowrap;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+
+.navButtonPrimary {
+    border-color: #111827;
+    background: #111827;
+    color: #fff;
+}
+
+.navButton:disabled,
+.navButtonPrimary:disabled {
+    cursor: not-allowed;
+    border-color: #d4dbe5;
+    background: #eef2f7;
+    color: #8a94a6;
+    box-shadow: none;
+    transform: none;
+}
+
+.menuButton:hover,
+.navButton:hover:not(:disabled),
+.modalClose:hover,
+.socialAuth button:hover,
+.authTabs button:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    transform: translateY(-1px);
+}
+
+.navButtonPrimary:hover:not(:disabled) {
+    background: #1f2937;
+    border-color: #1f2937;
+}
+
+.navButton:focus-visible,
+.menuButton:focus-visible,
+.modalClose:focus-visible,
+.socialAuth button:focus-visible,
+.authTabs button:focus-visible {
+    outline: 3px solid rgba(250, 204, 21, 0.55);
+    outline-offset: 2px;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #ddd;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.status-connected {
+    background: #d8f5df;
+    color: #0a6b23;
+}
+
+.status-connecting {
+    background: #fff2bf;
+    color: #7a5600;
+}
+
+.status-error,
+.status-disconnected {
+    background: #ffe1df;
+    color: #8a130b;
+}
+
+.roomBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid #d0d5dd;
+    border-radius: 999px;
+    background: #fff;
+    color: #475467;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.roomBadge b {
+    margin: 0 4px;
+    color: #111827;
+}
+
+.userBadge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: #111827;
+    color: #facc15;
+    font-size: 13px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.error {
+    margin: 0;
+    color: #a5170d;
+}
+
+.boardShell {
+    width: min(
+        100%,
+        calc(100vh - var(--header-height) - (var(--app-padding) * 2) - 36px),
+        calc(100dvh - var(--header-height) - (var(--app-padding) * 2) - 36px),
+        900px
+    );
+    max-width: 100%;
+    max-height: 100%;
+    min-width: 280px;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    place-items: center;
+    align-self: center;
+}
+
+.gameStage {
+    position: relative;
+    z-index: 1;
+    width: min(1180px, 100%);
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.3)),
+        rgba(255, 255, 255, 0.34);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    overflow: hidden;
+}
+
+.playersDock {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.playersDock span {
+    padding: 5px 9px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.ludoBoardSvg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 18px 28px rgba(15, 23, 42, 0.16));
+    touch-action: manipulation;
+}
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+}
+
+.roomModal {
+    position: relative;
+    width: min(460px, 100%);
+    max-height: min(760px, calc(100dvh - 36px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: clamp(20px, 4vw, 28px);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.34);
+    scrollbar-width: thin;
+    scrollbar-color: #98a2b3 transparent;
+}
+
+.roomModal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.roomModal::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #98a2b3;
+}
+
+.roomModal::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modalClose {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #d0d5dd;
+    border-radius: 999px;
+    background: #fff;
+    color: #667085;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.modalHeader {
+    padding-right: 34px;
+}
+
+.modalEyebrow {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: #0f766e;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    color: #111827;
+    font-size: clamp(25px, 5vw, 34px);
+    line-height: 1.05;
+}
+
+.modalHeader p {
+    margin: 10px 0 0;
+    color: #667085;
+    line-height: 1.5;
+}
+
+.authTabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    background: #eef2f7;
+}
+
+.authTabs button {
+    min-height: 40px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #667085;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 900;
+    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.authTabs button.active {
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+.socialAuth {
+    display: grid;
+    gap: 10px;
+}
+
+.socialAuth button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.socialAuth span {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #111827;
+    color: #fff;
+    font-weight: 900;
+}
+
+.dividerText {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    color: #98a2b3;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.dividerText::before,
+.dividerText::after {
+    content: "";
+    height: 1px;
+    background: #dbe3ee;
+}
+
+.modalFields {
+    display: grid;
+    gap: 12px;
+}
+
+.modalFields label {
+    display: grid;
+    gap: 7px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.modalFields input,
+.modalFields select {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 12px;
+    background: #fff;
+    color: #111827;
+    font: inherit;
+}
+
+.modalActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.authModal form {
+    display: grid;
+    gap: 18px;
+}
+
+@media (max-width: 720px) {
+    .App {
+        --header-height: 68px;
+    }
+
+    .appHeader {
+        grid-template-columns: 1fr auto;
+        align-items: center;
+    }
+
+    .menuButton {
+        display: inline-flex;
+    }
+
+    .topNav {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 60;
+        width: min(320px, calc(100vw - 24px));
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid rgba(17, 24, 39, 0.1);
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+    }
+
+    .topNavOpen {
+        display: grid;
+    }
+
+    .status {
+        justify-self: start;
+    }
+
+    .topNav .navButton,
+    .topNav .roomBadge,
+    .topNav .userBadge,
+    .topNav .status {
+        width: 100%;
+        justify-content: center;
+    }
+
+}
+
+@media (max-width: 430px) {
+    .App {
+        --header-height: 68px;
+        overflow-y: auto;
+    }
+
+    .topNav {
+        grid-template-columns: 1fr;
+    }
+
+    .navRoomInput,
+    .navButton {
+        width: 100%;
+    }
+
+    .boardShell {
+        min-width: 0;
+        width: min(100%, calc(100dvh - var(--header-height) - 28px));
+    }
+
+    .playersDock {
+        position: static;
+        justify-content: center;
+        padding: 8px;
+    }
+
+    .modalOverlay {
+        align-items: start;
+        padding: 10px;
+    }
+
+    .roomModal {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        padding: 18px;
+        border-radius: 14px;
+    }
+}
+
+@media (max-height: 700px) and (min-width: 721px) {
+    .App {
+        --header-height: 64px;
+    }
+
+    .appHeader {
+        min-height: var(--header-height);
+        padding: 10px 12px;
+    }
+
+    .brandMark {
+        width: 38px;
+        height: 38px;
+    }
+}
+
 

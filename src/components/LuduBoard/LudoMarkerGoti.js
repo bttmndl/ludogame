@@ -34,8 +34,36 @@ function getJumpTransform(from, to, t) {
   return { x, y: y - lift, scaleX, scaleY };
 }
 
+function parsePoints(points) {
+  return points.split(" ").map((point) => {
+    const [x, y] = point.split(",").map(Number);
+    return { x, y };
+  });
+}
+
+function pointInQuad([p1, p2, p3, p4], u, v) {
+  return {
+    x:
+      (1 - u) * (1 - v) * p1.x +
+      (1 - u) * v * p2.x +
+      u * v * p3.x +
+      u * (1 - v) * p4.x,
+    y:
+      (1 - u) * (1 - v) * p1.y +
+      (1 - u) * v * p2.y +
+      u * v * p3.y +
+      u * (1 - v) * p4.y,
+  };
+}
+
+function finishedGotiLabel(goti) {
+  const gotiIndex = Number(String(goti.id).split("-")[1]);
+  return Number.isInteger(gotiIndex) ? `G${gotiIndex + 1}` : "G";
+}
+
 /* ---------------- COMPONENT ---------------- */
 function LudoMarkerGoti({
+  winBoxCordLine,
   gotis,
   markers,
   homeMarkers,
@@ -43,14 +71,15 @@ function LudoMarkerGoti({
   moveRequest,
   onMoveComplete,
   numberWiseColor,
-  playerCount,
   currentPlayer,
+  localPlayerId,
   handleAnimation,
   PLAYERS,
 }) {
   const [activeGotiId, setActiveGotiId] = useState(null);
   const [stepsLeft, setStepsLeft] = useState(0);
   const [animatedBox, setAnimatedBox] = useState(null);
+  const [movePath, setMovePath] = useState([]);
   const [jumpState, setJumpState] = useState(null);
 
   const rafRef = useRef(null);
@@ -66,6 +95,7 @@ function LudoMarkerGoti({
 
     setActiveGotiId(moveRequest.gotiId);
     setStepsLeft(moveRequest.steps);
+    setMovePath(moveRequest.path || []);
 
     if (g.position === -1) {
       setAnimatedBox(player.start - 1);
@@ -78,24 +108,14 @@ function LudoMarkerGoti({
   useEffect(() => {
     if (!activeGotiId || stepsLeft <= 0 || animatedBox === null) return;
 
-    const g = gotis.find((g) => g.id === moveRequest.gotiId);
-    const player = PLAYERS.find((p) => p.id === g.playerId);
-
-    let fromBox;
-    let nextBox;
-
-    fromBox = animatedBox;
-    nextBox =
-      player.start - g.position <= 12 && player.start - g.position > 0
-        ? fromBox + 1
-        : fromBox % 18 === 6
-          ? (fromBox + 6) % (playerCount * 18)
-          : (fromBox + 1) % (playerCount * 18);
+    const fromBox = animatedBox;
+    const nextBox = movePath[0];
 
     if (!markers[fromBox] || !markers[nextBox]) {
       // Safety check: if markers are missing, finish animation immediately
       setAnimatedBox(nextBox);
       setStepsLeft(0);
+      setMovePath([]);
       onMoveComplete(activeGotiId, nextBox);
       setActiveGotiId(null);
       return;
@@ -126,9 +146,11 @@ function LudoMarkerGoti({
         setJumpState(null);
         setAnimatedBox(nextBox);
         setStepsLeft((s) => s - 1);
+        setMovePath((path) => path.slice(1));
 
         if (stepsLeft === 1) {
           onMoveComplete(activeGotiId, nextBox);
+          setMovePath([]);
           setActiveGotiId(null);
         }
       }
@@ -140,27 +162,35 @@ function LudoMarkerGoti({
     activeGotiId,
     stepsLeft,
     animatedBox,
+    movePath,
     markers,
-    playerCount,
     onMoveComplete,
     gotis,
     moveRequest,
     currentPlayer,
   ]);
 
-  function isSelectable(goti, currentPlayer) {
-    return goti.playerId === currentPlayer && !goti.finished;
+  function isSelectable(goti) {
+    return (
+      goti.playerId === currentPlayer &&
+      goti.playerId === localPlayerId &&
+      !goti.finished
+    );
   }
 
   /* ---------- GROUP GOTIS ---------- */
   const boardGotisByCell = {};
   const homeGotisByPlayer = {};
+  const winGotisByPlayer = {};
 
   gotis.forEach((g) => {
     // ✅ If this goti is animating from home, treat it as if it's on the board
     if (g.id === activeGotiId && g.position === -1 && animatedBox !== null) {
       if (!boardGotisByCell[animatedBox]) boardGotisByCell[animatedBox] = [];
       boardGotisByCell[animatedBox].push(g);
+    } else if (g.finished) {
+      if (!winGotisByPlayer[g.playerId]) winGotisByPlayer[g.playerId] = [];
+      winGotisByPlayer[g.playerId].push(g);
     } else if (g.position >= 0) {
       if (!boardGotisByCell[g.position]) boardGotisByCell[g.position] = [];
       boardGotisByCell[g.position].push(g);
@@ -199,16 +229,62 @@ function LudoMarkerGoti({
                 fill={numberWiseColor[goti.playerId]}
                 stroke="black"
                 style={{
-                  cursor: isSelectable(goti, currentPlayer)
-                    ? "pointer"
-                    : "default",
-                  opacity: isSelectable(goti, currentPlayer) ? 1 : 0.4,
+                  cursor: isSelectable(goti) ? "pointer" : "default",
+                  opacity: isSelectable(goti) ? 1 : 0.4,
                 }}
                 onClick={() => {
-                  if (!isSelectable(goti, currentPlayer) || moveRequest) return;
+                  if (!isSelectable(goti) || moveRequest) return;
                   handleAnimation(goti.id);
                 }}
               />
+            </g>
+          );
+        });
+      })}
+
+      {/* -------- FINISHED GOTIS (CENTER WIN BOX) -------- */}
+      {Object.entries(winGotisByPlayer).map(([playerId, winGotis]) => {
+        const numericPlayerId = Number(playerId);
+        const playerCount = numberWiseColor.length;
+        const winBoxIndex = (numericPlayerId - 1 + playerCount) % playerCount;
+        const winBox = winBoxCordLine?.[winBoxIndex];
+        if (!winBox) return null;
+
+        const quad = parsePoints(winBox);
+        const slots = [
+          [0.34, 0.36],
+          [0.66, 0.36],
+          [0.34, 0.68],
+          [0.66, 0.68],
+        ];
+
+        return winGotis.map((goti, index) => {
+          const [u, v] = slots[index % slots.length];
+          const { x, y } = pointInQuad(quad, u, v);
+
+          return (
+            <g key={goti.id}>
+              <circle
+                cx={x}
+                cy={y}
+                r={12}
+                fill={numberWiseColor[goti.playerId]}
+                stroke="black"
+                strokeWidth="1.5"
+              />
+              <text
+                x={x}
+                y={y + 4}
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="900"
+                fill="white"
+                stroke="rgba(0,0,0,0.42)"
+                strokeWidth="0.45"
+                paintOrder="stroke"
+              >
+                {finishedGotiLabel(goti)}
+              </text>
             </g>
           );
         });
@@ -272,13 +348,11 @@ function LudoMarkerGoti({
                 fill={numberWiseColor[goti.playerId]}
                 stroke="black"
                 style={{
-                  cursor: isSelectable(goti, currentPlayer)
-                    ? "pointer"
-                    : "default",
-                  opacity: isSelectable(goti, currentPlayer) ? 1 : 0.4,
+                  cursor: isSelectable(goti) ? "pointer" : "default",
+                  opacity: isSelectable(goti) ? 1 : 0.4,
                 }}
                 onClick={() => {
-                  if (!isSelectable(goti, currentPlayer) || moveRequest) return;
+                  if (!isSelectable(goti) || moveRequest) return;
                   handleAnimation(goti.id); // already exists in board
                 }}
               />

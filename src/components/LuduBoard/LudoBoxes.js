@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 
-function LudoBoxes({lineCoordinates, handleAnimation, numberWiseColor}) {
+function LudoBoxes({lineCoordinates, handleAnimation, numberWiseColor, playerCount}) {
 
 
   // Generate boxes from line coordinates for playerMove
@@ -59,7 +59,7 @@ function LudoBoxes({lineCoordinates, handleAnimation, numberWiseColor}) {
           fill={
             (Math.floor(idx / 6) % 3 === 1 && idx % 6 !== 0) ||
             (Math.floor(idx / 6) % 3 === 2 && idx % 6 === 1)
-              ? numberWiseColor[(Math.floor(idx / 18) + 1) % 6]
+              ? numberWiseColor[(Math.floor(idx / 18) + 1) % playerCount]
               : "white"
           }
           stroke="black"

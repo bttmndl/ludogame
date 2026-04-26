@@ -19,7 +19,6 @@ import { generateHomeDropdownMarker } from "./geometry/homeMarkers";
 // Constants
 const POLYGON_SIZE = 80;
 
-
 /* ================= DYNAMIC HELPERS ================= */
 
 function generatePlayers(playerCount, totalCells) {
@@ -33,7 +32,9 @@ function generatePlayers(playerCount, totalCells) {
 function generateSafeCells(players) {
   // The starting positions are the safe cells.
   const res = [];
-  players.forEach((p) => res.push(p.start-1, (p.start + 7) % (18 * players.length)));
+  players.forEach((p) =>
+    res.push(p.start - 1, (p.start + 7) % (18 * players.length)),
+  );
   return res;
 }
 
@@ -52,7 +53,17 @@ function createInitialGotis(players) {
   return gotis;
 }
 
-function LudoBoard({ playerCount, SVG_SIZE }) {
+function LudoBoard({
+  playerCount,
+  SVG_SIZE,
+  online = false,
+  localPlayerId = null,
+  remoteGameState = null,
+  remoteAction = null,
+  onRollDice,
+  onMoveGoti,
+  onGameStateChange,
+}) {
   const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
   const TOTAL_CELLS = playerCount * 18;
   const [isRolling, setIsRolling] = useState(false);
@@ -62,10 +73,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     [playerCount, TOTAL_CELLS],
   );
 
-  const SAFE_CELLS = useMemo(
-    () => generateSafeCells(PLAYERS),
-    [PLAYERS],
-  );
+  const SAFE_CELLS = useMemo(() => generateSafeCells(PLAYERS), [PLAYERS]);
 
   /* ---------- GAME STATE ---------- */
 
@@ -77,6 +85,41 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   }));
 
   const [moveRequest, setMoveRequest] = useState(null);
+
+  useEffect(() => {
+    if (remoteGameState) {
+      setGame(remoteGameState);
+      setMoveRequest(null);
+      setIsRolling(false);
+    }
+  }, [remoteGameState]);
+
+  useEffect(() => {
+    if (!remoteAction) return;
+
+    if (remoteAction.type === "roll") {
+      setGame((prev) => {
+        if (
+          prev.winner !== null ||
+          prev.dice ||
+          prev.currentPlayer !== remoteAction.playerId
+        ) {
+          return prev;
+        }
+
+        const next = { ...prev, dice: remoteAction.dice };
+        if (remoteAction.playerId === localPlayerId) {
+          window.setTimeout(() => onGameStateChange?.(next), 0);
+        }
+        return next;
+      });
+      return;
+    }
+
+    if (remoteAction.type === "move") {
+      requestMove(remoteAction.gotiId, remoteAction.playerId);
+    }
+  }, [remoteAction]);
 
   // Auto-pass turn if no moves possible, or if there is a winner
   useEffect(() => {
@@ -157,13 +200,19 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           ? prev.currentPlayer
           : (prev.currentPlayer + 1) % PLAYERS.length;
 
-      return {
+      const nextGame = {
         ...prev,
         gotis,
         dice: winner !== null ? prev.dice : null, // keep dice value on win
         currentPlayer: winner !== null ? prev.currentPlayer : nextPlayer,
         winner,
       };
+
+      if (!online || prev.currentPlayer === localPlayerId) {
+        window.setTimeout(() => onGameStateChange?.(nextGame), 0);
+      }
+
+      return nextGame;
     });
 
     // 5️⃣ Clear move request
@@ -195,7 +244,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
       }
 
       const newPosition = path[path.length - 1];
-      
+
       return {
         path,
         newPosition,
@@ -242,13 +291,14 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     };
   };
 
-  function handleAnimation(gotiId) {
+  function requestMove(gotiId, playerId = game.currentPlayer) {
     // 1. Check if dice is rolled, not animating, and no winner
     if (!game.dice || isRolling || game.winner !== null) return;
+    if (online && playerId !== game.currentPlayer) return;
 
     // 2. Find the goti
     const goti = game.gotis.find((g) => g.id === gotiId);
-    if (!goti || goti.playerId !== game.currentPlayer || goti.finished) return;
+    if (!goti || goti.playerId !== playerId || goti.finished) return;
 
     // 3. Calculate the move
     const move = calculateMove(goti, game.dice);
@@ -275,14 +325,26 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
     });
   }
 
+  function handleAnimation(gotiId) {
+    if (online) {
+      if (localPlayerId !== game.currentPlayer) return;
+      const goti = game.gotis.find((g) => g.id === gotiId);
+      if (!goti || goti.playerId !== localPlayerId) return;
+      onMoveGoti?.(gotiId);
+      return;
+    }
+
+    requestMove(gotiId);
+  }
+
   /* ================= COLORS ================= */
 
   const numberWiseColor = useMemo(() => {
-  return Array.from({ length: playerCount }, (_, i) => {
-    const hue = (i * 360) / playerCount;
-    return `hsl(${hue}, 70%, 50%)`;
-  });
-}, [playerCount]);
+    return Array.from({ length: playerCount }, (_, i) => {
+      const hue = (i * 360) / playerCount;
+      return `hsl(${hue}, 70%, 50%)`;
+    });
+  }, [playerCount]);
 
   /* ================= GEOMETRY ================= */
 
@@ -350,10 +412,15 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
   // const starCords = useMemo(() => {
   //   return generateStarPolygon(boxes, playerCount);
   // }, [boxes, playerCount]);f
-  console.log("gotis", game.gotis)
+  console.log("gotis", game.gotis);
   return (
-    <div>
-      <svg width={SVG_SIZE} height={SVG_SIZE}>
+    <div className="boardShell">
+      <svg
+        className="ludoBoardSvg"
+        viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
+        role="img"
+        aria-label="Ludo board"
+      >
         <rect
           x="0"
           y="0"
@@ -377,10 +444,15 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           }}
           onClick={() => {
             if (isRolling || game.dice || game.winner !== null) return;
+            if (online && localPlayerId !== game.currentPlayer) return;
 
             // roll dice only (no move yet)
             const diceValue = Math.floor(Math.random() * 6) + 1;
-            setGame((prev) => ({ ...prev, dice: diceValue }));
+            if (online) {
+              onRollDice?.(diceValue);
+            } else {
+              setGame((prev) => ({ ...prev, dice: diceValue }));
+            }
           }}
         >
           <rect
@@ -412,6 +484,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           lineCoordinates={lineCoordinates}
           handleAnimation={handleAnimation}
           numberWiseColor={numberWiseColor}
+          playerCount={playerCount}
         />
 
         <LudoPolygon
@@ -439,6 +512,7 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
         />
 
         <LudoMarkerGoti
+          winBoxCordLine={winBoxCordLine}
           gotis={game.gotis}
           markers={markers}
           homeMarkers={homeMarkers}
@@ -446,8 +520,8 @@ function LudoBoard({ playerCount, SVG_SIZE }) {
           moveRequest={moveRequest}
           onMoveComplete={onMoveComplete}
           numberWiseColor={numberWiseColor}
-          playerCount={playerCount}
           currentPlayer={game.currentPlayer}
+          localPlayerId={online ? localPlayerId : game.currentPlayer}
           handleAnimation={handleAnimation}
           PLAYERS={PLAYERS}
         />
