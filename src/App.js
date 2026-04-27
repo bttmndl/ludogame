@@ -19,6 +19,8 @@ const App = () => {
   const [connectionStatus, setConnectionStatus] = useState("disconnected");
   const [room, setRoom] = useState(null);
   const [localPlayerId, setLocalPlayerId] = useState(null);
+  const [robotMatch, setRobotMatch] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
   const [remoteGameState, setRemoteGameState] = useState(null);
   const [remoteAction, setRemoteAction] = useState(null);
   const [error, setError] = useState("");
@@ -40,6 +42,7 @@ const App = () => {
       ({ type, payload }) => {
         if (type === "joined_room") {
           setError("");
+          setRobotMatch(false);
           setRoom(payload);
           setLocalPlayerId(payload.playerId);
           setPlayerCount(payload.playerCount || 4);
@@ -111,6 +114,17 @@ const App = () => {
     const nextRoomCode = makeRoomCode();
     setRoomCode(nextRoomCode);
     joinRoom(nextRoomCode);
+  }
+
+  function startRobotMatch() {
+    setError("");
+    setRoom(null);
+    setRobotMatch(true);
+    setLocalPlayerId(0);
+    setRemoteGameState(null);
+    setRemoteAction(null);
+    setGameKey((key) => key + 1);
+    setRoomModalMode(null);
   }
 
   function openRoomModal(mode) {
@@ -198,10 +212,15 @@ const App = () => {
               Room <b>{room.roomId}</b> | P{localPlayerId + 1}
             </span>
           )}
+          {robotMatch && (
+            <span className="roomBadge">
+              Robot Match | P1 vs {playerCount - 1} bots
+            </span>
+          )}
           <button
             className="navButton navButtonPrimary"
             onClick={() => openRoomModal("join")}
-            disabled={connectionStatus !== "connected" || online}
+            disabled={online}
           >
             Room
           </button>
@@ -222,21 +241,28 @@ const App = () => {
       </header>
 
       <main className="gameStage">
-        {room && (
+        {(room || robotMatch) && (
           <div className="playersDock">
-            {room.players?.map((player) => (
-              <span key={player.id}>
-                P{player.playerId + 1}: {player.name}
-              </span>
-            ))}
+            {room
+              ? room.players?.map((player) => (
+                  <span key={player.id}>
+                    P{player.playerId + 1}: {player.name}
+                  </span>
+                ))
+              : Array.from({ length: playerCount }, (_, index) => (
+                  <span key={index}>
+                    P{index + 1}: {index === 0 ? playerName : "Robot"}
+                  </span>
+                ))}
           </div>
         )}
         <LudoBoard
-          key={`${playerCount}-${room?.roomId || "local"}`}
+          key={`${playerCount}-${room?.roomId || "local"}-${gameKey}`}
           playerCount={playerCount}
           SVG_SIZE={svgSize}
           online={online}
-          localPlayerId={localPlayerId}
+          enableBots={robotMatch}
+          localPlayerId={robotMatch ? 0 : localPlayerId}
           remoteGameState={remoteGameState}
           remoteAction={remoteAction}
           onRollDice={sendRoll}
@@ -259,12 +285,18 @@ const App = () => {
             <div className="modalHeader">
               <span className="modalEyebrow">Game room</span>
               <h2>
-                {roomModalMode === "create" ? "Create a room" : "Join a room"}
+                {roomModalMode === "create"
+                  ? "Create a room"
+                  : roomModalMode === "robot"
+                    ? "Play with robot"
+                    : "Join a room"}
               </h2>
               <p>
                 {roomModalMode === "create"
                   ? "Set up a room and invite friends with the generated code."
-                  : "Enter your name and the room code shared by the host."}
+                  : roomModalMode === "robot"
+                    ? "Choose how many players and let the robots handle the rest."
+                    : "Enter your name and the room code shared by the host."}
               </p>
             </div>
 
@@ -282,6 +314,13 @@ const App = () => {
                 type="button"
               >
                 Create
+              </button>
+              <button
+                className={roomModalMode === "robot" ? "active" : ""}
+                onClick={() => setRoomModalMode("robot")}
+                type="button"
+              >
+                Robot
               </button>
             </div>
 
@@ -308,7 +347,7 @@ const App = () => {
                 </label>
               )}
 
-              {roomModalMode === "create" && (
+              {(roomModalMode === "create" || roomModalMode === "robot") && (
                 <label>
                   Players
                   <select
@@ -333,10 +372,22 @@ const App = () => {
               </button>
               <button
                 className="navButton navButtonPrimary"
-                onClick={roomModalMode === "create" ? createRoom : () => joinRoom()}
-                disabled={connectionStatus !== "connected"}
+                onClick={
+                  roomModalMode === "create"
+                    ? createRoom
+                    : roomModalMode === "robot"
+                      ? startRobotMatch
+                      : () => joinRoom()
+                }
+                disabled={
+                  roomModalMode !== "robot" && connectionStatus !== "connected"
+                }
               >
-                {roomModalMode === "create" ? "Create Room" : "Join Room"}
+                {roomModalMode === "create"
+                  ? "Create Room"
+                  : roomModalMode === "robot"
+                    ? "Play with Robot"
+                    : "Join Room"}
               </button>
             </div>
           </section>

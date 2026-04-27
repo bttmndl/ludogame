@@ -57,6 +57,7 @@ function LudoBoard({
   playerCount,
   SVG_SIZE,
   online = false,
+  enableBots = false,
   localPlayerId = null,
   remoteGameState = null,
   remoteAction = null,
@@ -85,6 +86,12 @@ function LudoBoard({
   }));
 
   const [moveRequest, setMoveRequest] = useState(null);
+
+  function isHumanTurn(playerId = game.currentPlayer) {
+    if (online) return localPlayerId === playerId;
+    if (enableBots) return localPlayerId === playerId;
+    return true;
+  }
 
   useEffect(() => {
     if (remoteGameState) {
@@ -120,6 +127,54 @@ function LudoBoard({
       requestMove(remoteAction.gotiId, remoteAction.playerId);
     }
   }, [remoteAction]);
+
+  useEffect(() => {
+    if (!enableBots || online || game.winner !== null || isRolling) return;
+    if (game.currentPlayer === localPlayerId) return;
+
+    if (!game.dice) {
+      const timer = setTimeout(() => {
+        const diceValue = Math.floor(Math.random() * 6) + 1;
+        setGame((prev) => {
+          if (
+            prev.winner !== null ||
+            prev.dice ||
+            prev.currentPlayer === localPlayerId
+          ) {
+            return prev;
+          }
+
+          return { ...prev, dice: diceValue };
+        });
+      }, 700);
+
+      return () => clearTimeout(timer);
+    }
+
+    const botGotis = game.gotis.filter(
+      (g) => g.playerId === game.currentPlayer && !g.finished,
+    );
+    const movableGoti =
+      botGotis.find((g) => g.position >= 0 && calculateMove(g, game.dice)) ||
+      botGotis.find((g) => calculateMove(g, game.dice));
+
+    if (!movableGoti) return;
+
+    const timer = setTimeout(() => {
+      requestMove(movableGoti.id, game.currentPlayer);
+    }, 650);
+
+    return () => clearTimeout(timer);
+  }, [
+    enableBots,
+    online,
+    game.currentPlayer,
+    game.dice,
+    game.gotis,
+    game.winner,
+    isRolling,
+    localPlayerId,
+  ]);
 
   // Auto-pass turn if no moves possible, or if there is a winner
   useEffect(() => {
@@ -295,6 +350,9 @@ function LudoBoard({
     // 1. Check if dice is rolled, not animating, and no winner
     if (!game.dice || isRolling || game.winner !== null) return;
     if (online && playerId !== game.currentPlayer) return;
+    if (enableBots && !isHumanTurn(playerId)) {
+      if (playerId === localPlayerId) return;
+    }
 
     // 2. Find the goti
     const goti = game.gotis.find((g) => g.id === gotiId);
@@ -333,6 +391,8 @@ function LudoBoard({
       onMoveGoti?.(gotiId);
       return;
     }
+
+    if (enableBots && !isHumanTurn()) return;
 
     requestMove(gotiId);
   }
@@ -445,6 +505,7 @@ function LudoBoard({
           onClick={() => {
             if (isRolling || game.dice || game.winner !== null) return;
             if (online && localPlayerId !== game.currentPlayer) return;
+            if (enableBots && !isHumanTurn()) return;
 
             // roll dice only (no move yet)
             const diceValue = Math.floor(Math.random() * 6) + 1;
@@ -521,7 +582,9 @@ function LudoBoard({
           onMoveComplete={onMoveComplete}
           numberWiseColor={numberWiseColor}
           currentPlayer={game.currentPlayer}
-          localPlayerId={online ? localPlayerId : game.currentPlayer}
+          localPlayerId={
+            online || enableBots ? localPlayerId : game.currentPlayer
+          }
           handleAnimation={handleAnimation}
           PLAYERS={PLAYERS}
         />
