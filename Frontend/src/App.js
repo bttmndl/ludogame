@@ -184,8 +184,8 @@ const App = () => {
         <div className="brandBlock">
           <span className="brandMark">L</span>
           <div>
-            <strong>Ludo Arena</strong>
-            <small>Realtime rooms</small>
+            <strong>Ludo Mania</strong>
+            <small>Realtime Play</small>
           </div>
         </div>
 
@@ -288,7 +288,7 @@ const App = () => {
                 {roomModalMode === "create"
                   ? "Create a room"
                   : roomModalMode === "robot"
-                    ? "Play with robot"
+                    ? "Play with AI"
                     : "Join a room"}
               </h2>
               <p>
@@ -320,7 +320,7 @@ const App = () => {
                 onClick={() => setRoomModalMode("robot")}
                 type="button"
               >
-                Robot
+                AI
               </button>
             </div>
 
@@ -386,7 +386,7 @@ const App = () => {
                 {roomModalMode === "create"
                   ? "Create Room"
                   : roomModalMode === "robot"
-                    ? "Play with Robot"
+                    ? "Play with AI"
                     : "Join Room"}
               </button>
             </div>

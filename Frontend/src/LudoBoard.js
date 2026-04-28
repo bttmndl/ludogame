@@ -494,17 +494,6 @@ function LudoBoard({
         role="img"
         aria-label="Ludo board"
       >
-        <rect
-          x="0"
-          y="0"
-          width={SVG_SIZE}
-          height={SVG_SIZE}
-          fill="none"
-          stroke="black"
-          strokeWidth="2"
-        />
-
-        <LudoCircle CIRCLE_RADIUS={CIRCLE_RADIUS} SVG_SIZE={SVG_SIZE} />
 
         {/* ---------- DICE & WINNER UI ---------- */}
         <g
