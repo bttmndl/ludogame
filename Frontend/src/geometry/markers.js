@@ -9,7 +9,7 @@ export function generateDropdownMarker(boxes) {
         .flat()
         .map((p) => parseFloat(p));
 
-      const [x1, y1, x2, y2, x3, y3, x4, y4] = point;
+      const [x1, y1, , , x3, y3, , ] = point;
 
       const midX = (x1 + x3) / 2;
       const midY = (y1 + y3) / 2;

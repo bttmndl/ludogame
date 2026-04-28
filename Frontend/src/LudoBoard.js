@@ -126,7 +126,7 @@ function LudoBoard({
     if (remoteAction.type === "move") {
       requestMove(remoteAction.gotiId, remoteAction.playerId);
     }
-  }, [remoteAction]);
+  }, [remoteAction, localPlayerId, requestMove, onGameStateChange]);
 
   useEffect(() => {
     if (!enableBots || online || game.winner !== null || isRolling) return;
@@ -174,6 +174,7 @@ function LudoBoard({
     game.winner,
     isRolling,
     localPlayerId,
+    requestMove,
   ]);
 
   // Auto-pass turn if no moves possible, or if there is a winner

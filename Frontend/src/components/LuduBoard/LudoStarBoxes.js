@@ -25,7 +25,7 @@ function LudoStarBoxes({numberWiseColor, playerCount, lineCoordinates}) {
           : 1;
 
       // Destructure the coordinates into individual variables
-      const [x1, y1, x2, y2, x3, y3, x4, y4] = coordsArray.flat();
+      const [x1, y1, x2, , , x3, y3, ,, y4] = coordsArray.flat();
 
       // Calculate the center of the rectangle
       const centerX = (x1 + x3) / 2;
@@ -101,25 +101,25 @@ function LudoStarBoxes({numberWiseColor, playerCount, lineCoordinates}) {
       }, []);
   }
  
-  function generateTwoMidPointsBetweenTwoPoints(x1, y1, x2, y2) {
-    // Calculate the direction vector from (x1, y1) to (x2, y2)
-    const dirX = x2 - x1;
-    const dirY = y2 - y1;
+  // function generateTwoMidPointsBetweenTwoPoints(x1, y1, x2, y2) {
+  //   // Calculate the direction vector from (x1, y1) to (x2, y2)
+  //   const dirX = x2 - x1;
+  //   const dirY = y2 - y1;
 
-    // Calculate the distance between (x1, y1) and (x2, y2)
-    const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+  //   // Calculate the distance between (x1, y1) and (x2, y2)
+  //   const distance = Math.sqrt(dirX * dirX + dirY * dirY);
 
-    // Calculate the coordinates of (x3, y3) and (x4, y4) at equal distances from the endpoints
-    const d = distance / 3; // Divide by 3 to get one-third of the distance
+  //   // Calculate the coordinates of (x3, y3) and (x4, y4) at equal distances from the endpoints
+  //   const d = distance / 3; // Divide by 3 to get one-third of the distance
 
-    const x3 = x1 + (dirX * d) / distance;
-    const y3 = y1 + (dirY * d) / distance;
+  //   const x3 = x1 + (dirX * d) / distance;
+  //   const y3 = y1 + (dirY * d) / distance;
 
-    const x4 = x1 + (2 * dirX * d) / distance;
-    const y4 = y1 + (2 * dirY * d) / distance;
+  //   const x4 = x1 + (2 * dirX * d) / distance;
+  //   const y4 = y1 + (2 * dirY * d) / distance;
 
-    return [x3, y3, x4, y4];
-  }
+  //   return [x3, y3, x4, y4];
+  // }
   
   return (
     <>
