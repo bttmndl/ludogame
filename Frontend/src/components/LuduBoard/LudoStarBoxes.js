@@ -25,7 +25,7 @@ function LudoStarBoxes({numberWiseColor, playerCount, lineCoordinates}) {
           : 1;
 
       // Destructure the coordinates into individual variables
-      const [x1, y1, x2, , , x3, y3, ,, y4] = coordsArray.flat();
+      const [x1, y1, x2, , x3, y3, , y4] = coordsArray.flat();
 
       // Calculate the center of the rectangle
       const centerX = (x1 + x3) / 2;
@@ -120,7 +120,7 @@ function LudoStarBoxes({numberWiseColor, playerCount, lineCoordinates}) {
 
   //   return [x3, y3, x4, y4];
   // }
-  
+  console.log("STARCORDS", starCords)
   return (
     <>
       {starCords?.map((cord, idx) => (
