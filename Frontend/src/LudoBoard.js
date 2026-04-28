@@ -65,7 +65,7 @@ function LudoBoard({
   onMoveGoti,
   onGameStateChange,
 }) {
-  const CIRCLE_RADIUS = SVG_SIZE / 2 - 4;
+
   const TOTAL_CELLS = playerCount * 18;
   const [isRolling, setIsRolling] = useState(false);
 
