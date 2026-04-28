@@ -162,7 +162,6 @@ function LudoMarkerGoti({
 
         // ✅ Update refs immediately (no re-render delay)
         movePathRef.current = movePathRef.current.slice(1);
-
         const remaining = stepsLeftRef.current - 1;
         stepsLeftRef.current = remaining;
         setStepsLeft(remaining);
