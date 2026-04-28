@@ -1,4 +1,4 @@
 This is a famous board game called Ludo.
-This Web App alows you to play with 4 or even with 6 player.
+This Web App alows you to play with 4 or even with 6, 8 player.
 check the demo here:- 
-https://golden-capybara-ccab4f.netlify.app
+https://ludomania-mu.vercel.app/
