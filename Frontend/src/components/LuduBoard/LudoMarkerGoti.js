@@ -82,16 +82,29 @@ function LudoMarkerGoti({
   const [movePath, setMovePath] = useState([]);
   const [jumpState, setJumpState] = useState(null);
 
+  // ✅ Stable refs to avoid animation restarts
   const rafRef = useRef(null);
+  const movePathRef = useRef([]);
+  const stepsLeftRef = useRef(0);
+  const onMoveCompleteRef = useRef(onMoveComplete);
+
+  // ✅ Keep onMoveComplete ref updated without triggering re-renders
+  useEffect(() => {
+    onMoveCompleteRef.current = onMoveComplete;
+  }, [onMoveComplete]);
 
   /* ---------- INIT MOVE ---------- */
   useEffect(() => {
     if (!moveRequest) return;
 
     const g = gotis.find((g) => g.id === moveRequest.gotiId);
+    if (!g) return;
+
     const player = PLAYERS.find((p) => p.id === g.playerId);
 
-    if (!g) return;
+    // ✅ Set refs first so animation loop reads correct values immediately
+    movePathRef.current = moveRequest.path || [];
+    stepsLeftRef.current = moveRequest.steps;
 
     setActiveGotiId(moveRequest.gotiId);
     setStepsLeft(moveRequest.steps);
@@ -109,14 +122,19 @@ function LudoMarkerGoti({
     if (!activeGotiId || stepsLeft <= 0 || animatedBox === null) return;
 
     const fromBox = animatedBox;
-    const nextBox = movePath[0];
+    const nextBox = movePathRef.current[0];
+
+    // Guard: no next step to go to
+    if (nextBox === undefined && nextBox !== 0) return;
 
     if (!markers[fromBox] || !markers[nextBox]) {
-      // Safety check: if markers are missing, finish animation immediately
+      // Safety: markers missing, finish animation immediately
+      movePathRef.current = [];
+      stepsLeftRef.current = 0;
       setAnimatedBox(nextBox);
       setStepsLeft(0);
       setMovePath([]);
-      onMoveComplete(activeGotiId, nextBox);
+      onMoveCompleteRef.current(activeGotiId, nextBox);
       setActiveGotiId(null);
       return;
     }
@@ -144,12 +162,19 @@ function LudoMarkerGoti({
         rafRef.current = requestAnimationFrame(frame);
       } else {
         setJumpState(null);
-        setAnimatedBox(nextBox);
-        setStepsLeft((s) => s - 1);
+
+        // ✅ Update refs immediately (no re-render delay)
+        movePathRef.current = movePathRef.current.slice(1);
         setMovePath((path) => path.slice(1));
 
-        if (stepsLeft === 1) {
-          onMoveComplete(activeGotiId, nextBox);
+        const remaining = stepsLeftRef.current - 1;
+        stepsLeftRef.current = remaining;
+        setStepsLeft(remaining);
+        setAnimatedBox(nextBox);
+
+        if (remaining === 0) {
+          onMoveCompleteRef.current(activeGotiId, nextBox);
+          movePathRef.current = [];
           setMovePath([]);
           setActiveGotiId(null);
         }
@@ -158,17 +183,9 @@ function LudoMarkerGoti({
 
     rafRef.current = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [
-    activeGotiId,
-    stepsLeft,
-    animatedBox,
-    movePath,
-    markers,
-    onMoveComplete,
-    gotis,
-    moveRequest,
-    currentPlayer,
-  ]);
+
+    // ✅ Stable deps only — movePath/onMoveComplete/gotis removed to prevent animation restarts
+  }, [activeGotiId, stepsLeft, animatedBox, markers]);
 
   function isSelectable(goti) {
     return (
@@ -199,9 +216,7 @@ function LudoMarkerGoti({
       homeGotisByPlayer[g.playerId].push(g);
     }
   });
-  console.log("homeGotisByPlayer", homeGotisByPlayer);
-  console.log("goti", gotis);
-  console.log("boardGotisByCell", boardGotisByCell);
+
   /* ---------- RENDER ---------- */
   return (
     <>
@@ -353,7 +368,7 @@ function LudoMarkerGoti({
                 }}
                 onClick={() => {
                   if (!isSelectable(goti) || moveRequest) return;
-                  handleAnimation(goti.id); // already exists in board
+                  handleAnimation(goti.id);
                 }}
               />
             </g>
