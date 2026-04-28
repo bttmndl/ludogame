@@ -189,6 +189,10 @@ function LudoMarkerGoti({
     );
   }
 
+  function isActiveTurn(goti) {
+    return goti.playerId === currentPlayer && !goti.finished;
+  }
+
   /* ---------- GROUP GOTIS ---------- */
   const boardGotisByCell = {};
   const homeGotisByPlayer = {};
@@ -358,7 +362,7 @@ function LudoMarkerGoti({
                 stroke="black"
                 style={{
                   cursor: isSelectable(goti) ? "pointer" : "default",
-                  opacity: isSelectable(goti) ? 1 : 0.4,
+                  opacity: isActiveTurn(goti) ? 1 : 0.4,
                 }}
                 onClick={() => {
                   if (!isSelectable(goti) || moveRequest) return;
