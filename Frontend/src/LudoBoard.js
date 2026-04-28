@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import LudoCircle from "./components/LuduBoard/LudoCircle";
 import LudoTrianglePlayerBox from "./components/LuduBoard/LudoTrianglePlayerBox";
 import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
@@ -87,11 +87,129 @@ function LudoBoard({
 
   const [moveRequest, setMoveRequest] = useState(null);
 
-  function isHumanTurn(playerId = game.currentPlayer) {
+  const isHumanTurn = useCallback((playerId = game.currentPlayer) => {
     if (online) return localPlayerId === playerId;
     if (enableBots) return localPlayerId === playerId;
     return true;
-  }
+  }, [game.currentPlayer, online, enableBots, localPlayerId]);
+
+  const calculateMove = useCallback(
+    (goti, dice) => {
+      const LADDER_JUMP = 6;
+      const isLadderCell = (pos) => pos % 18 === 6;
+
+      const player = PLAYERS.find((p) => p.id === goti.playerId);
+
+      const hasOpponent = (pos) =>
+        !SAFE_CELLS.includes(pos) &&
+        game.gotis.some(
+          (g) => g.position === pos && g.playerId !== goti.playerId,
+        );
+
+      if (goti.position === -1) {
+        const path = [];
+        let currentPos = player.start - 1;
+
+        for (let i = 0; i < dice; i++) {
+          currentPos = (currentPos + 1) % TOTAL_CELLS;
+          path.push(currentPos);
+        }
+
+        const newPosition = path[path.length - 1];
+
+        return {
+          path,
+          newPosition,
+          finished: false,
+          ate: hasOpponent(newPosition),
+        };
+      }
+
+      const path = [];
+      let currentPos = goti.position;
+      const canEnterHome =
+        player.start - currentPos <= 12 && player.start - currentPos > 0;
+
+      if (canEnterHome) {
+        if (currentPos + dice >= player.start - 1) return null;
+        const finished = currentPos + dice === player.start - 2;
+        for (let i = 0; i < dice; i++) {
+          currentPos = (currentPos + 1) % TOTAL_CELLS;
+          path.push(currentPos);
+        }
+        const newPosition = goti.position + dice;
+        return { path, newPosition, finished, ate: hasOpponent(newPosition) };
+      }
+
+      for (let i = 0; i < dice; i++) {
+        if (isLadderCell(currentPos)) {
+          currentPos = (currentPos + LADDER_JUMP) % TOTAL_CELLS;
+          path.push(currentPos);
+        } else {
+          currentPos = (currentPos + 1) % TOTAL_CELLS;
+          path.push(currentPos);
+        }
+      }
+
+      const newPosition = path[path.length - 1];
+      return {
+        path,
+        newPosition,
+        finished: false,
+        ate: hasOpponent(newPosition),
+      };
+    },
+    [game.gotis, PLAYERS, SAFE_CELLS, TOTAL_CELLS],
+  );
+
+  const requestMove = useCallback((gotiId, playerId = game.currentPlayer) => {
+    // 1. Check if dice is rolled, not animating, and no winner
+    if (!game.dice || isRolling || game.winner !== null) return;
+    if (online && playerId !== game.currentPlayer) return;
+    if (enableBots && !isHumanTurn(playerId)) {
+      if (playerId === localPlayerId) return;
+    }
+
+    // 2. Find the goti
+    const goti = game.gotis.find((g) => g.id === gotiId);
+    if (!goti || goti.playerId !== playerId || goti.finished) return;
+
+    // 3. Calculate the move
+    const move = calculateMove(goti, game.dice);
+    if (!move) return;
+
+    console.log(`--- Goti Move Analysis ---
+    - Goti ID: ${goti.id}
+    - Player: ${goti.playerId}
+    - Start Position: ${goti.position}
+    - Dice Roll: ${game.dice}
+    - Calculated Path: [${move?.path?.join(" -> ")}]
+    - Final Position: ${move.newPosition}
+    - Finished: ${move.finished}
+    - Ate: ${move.ate}
+    --------------------------`);
+
+    // 4. Set up the animation request
+    setIsRolling(true);
+    setMoveRequest({
+      gotiId,
+      steps: game.dice,
+      ...move,
+    });
+  }, [
+    game.currentPlayer,
+    game.dice,
+    game.gotis,
+    game.winner,
+    isRolling,
+    online,
+    enableBots,
+    isHumanTurn,
+    localPlayerId,
+    calculateMove,
+    setIsRolling,
+    setMoveRequest,
+  ]);
 
   useEffect(() => {
     if (remoteGameState) {
@@ -175,6 +293,7 @@ function LudoBoard({
     isRolling,
     localPlayerId,
     requestMove,
+    calculateMove,
   ]);
 
   // Auto-pass turn if no moves possible, or if there is a winner
@@ -210,6 +329,7 @@ function LudoBoard({
     isRolling,
     PLAYERS.length,
     game.winner,
+    calculateMove,
   ]);
 
   function onMoveComplete(gotiId /*, finalBox is ignored */) {
@@ -274,114 +394,6 @@ function LudoBoard({
     // 5️⃣ Clear move request
     setMoveRequest(null);
     setIsRolling(false);
-  }
-
-  const calculateMove = (goti, dice) => {
-    const LADDER_JUMP = 6;
-    const isLadderCell = (pos) => pos % 18 === 6;
-
-    const player = PLAYERS.find((p) => p.id === goti.playerId);
-
-    // Helper to check if opponent goti exists at position
-    const hasOpponent = (pos) =>
-      !SAFE_CELLS.includes(pos) &&
-      game.gotis.some(
-        (g) => g.position === pos && g.playerId !== goti.playerId,
-      );
-
-    // 1. Spawning from home
-    if (goti.position === -1) {
-      const path = [];
-      let currentPos = player.start - 1; // Start before first move
-
-      for (let i = 0; i < dice; i++) {
-        currentPos = (currentPos + 1) % TOTAL_CELLS;
-        path.push(currentPos);
-      }
-
-      const newPosition = path[path.length - 1];
-
-      return {
-        path,
-        newPosition,
-        finished: false,
-        ate: hasOpponent(newPosition),
-      };
-    }
-
-    // 3. Moving on main track
-    const path = [];
-    let currentPos = goti.position;
-    const canEnterHome =
-      player.start - currentPos <= 12 && player.start - currentPos > 0;
-
-    // 2. Already in home lane
-    if (canEnterHome) {
-      if (currentPos + dice >= player.start - 1) return null; // Overshot
-      const finished = currentPos + dice === player.start - 2;
-      for (let i = 0; i < dice; i++) {
-        currentPos = (currentPos + 1) % TOTAL_CELLS;
-        path.push(currentPos);
-      }
-      const newPosition = goti.position + dice;
-      return { path, newPosition, finished, ate: hasOpponent(newPosition) };
-    }
-
-    for (let i = 0; i < dice; i++) {
-      // If landed on ladder, jump immediately and continue
-      if (isLadderCell(currentPos)) {
-        currentPos = (currentPos + LADDER_JUMP) % TOTAL_CELLS;
-        path.push(currentPos);
-      } else {
-        currentPos = (currentPos + 1) % TOTAL_CELLS;
-        path.push(currentPos);
-      }
-    }
-
-    const newPosition = path[path.length - 1];
-    return {
-      path,
-      newPosition,
-      finished: false,
-      ate: hasOpponent(newPosition),
-    };
-  };
-
-  function requestMove(gotiId, playerId = game.currentPlayer) {
-    // 1. Check if dice is rolled, not animating, and no winner
-    if (!game.dice || isRolling || game.winner !== null) return;
-    if (online && playerId !== game.currentPlayer) return;
-    if (enableBots && !isHumanTurn(playerId)) {
-      if (playerId === localPlayerId) return;
-    }
-
-    // 2. Find the goti
-    const goti = game.gotis.find((g) => g.id === gotiId);
-    if (!goti || goti.playerId !== playerId || goti.finished) return;
-
-    // 3. Calculate the move
-    const move = calculateMove(goti, game.dice);
-    if (!move) return; // Invalid move
-
-    // --- DEBUG LOGGING FOR THE MOVE ---
-    console.log(`--- Goti Move Analysis ---
-    - Goti ID: ${goti.id}
-    - Player: ${goti.playerId}
-    - Start Position: ${goti.position}
-    - Dice Roll: ${game.dice}
-    - Calculated Path: [${move?.path?.join(" -> ")}]
-    - Final Position: ${move.newPosition}
-    - Finished: ${move.finished}
-    - Ate: ${move.ate}
-    --------------------------`);
-
-    // 4. Set up the animation request
-    setIsRolling(true);
-    setMoveRequest({
-      gotiId,
-      steps: game.dice, // pass steps for animation speed/logic
-      ...move,
-    });
   }
 
   function handleAnimation(gotiId) {

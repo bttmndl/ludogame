@@ -102,7 +102,7 @@ function LudoMarkerGoti({
     } else {
       setAnimatedBox(g.position);
     }
-  }, [moveRequest, gotis]);
+  }, [moveRequest, gotis, PLAYERS]);
 
   /* ---------- STEP BY STEP MOVE ---------- */
   useEffect(() => {

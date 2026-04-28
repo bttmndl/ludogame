@@ -1,16 +1,13 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 
-function LudoBoxes({lineCoordinates, handleAnimation, numberWiseColor, playerCount}) {
-
-
+function LudoBoxes({
+  lineCoordinates,
+  handleAnimation,
+  numberWiseColor,
+  playerCount,
+}) {
   // Generate boxes from line coordinates for playerMove
-  const boxes = useMemo(() => {
-    return generateBoxesFromLineCoordinates();
-  }, [lineCoordinates]);
-
-
-  // Generate boxes from line coordinates for playerMove
-  function generateBoxesFromLineCoordinates() {
+  const generateBoxesFromLineCoordinates = useCallback(() => {
     const board = [];
     const boardCellArray = lineCoordinates;
 
@@ -30,23 +27,25 @@ function LudoBoxes({lineCoordinates, handleAnimation, numberWiseColor, playerCou
         const p4 = [boardCellArray[i][j + 1][0], boardCellArray[i][j + 1][1]];
 
         box.push(
-          `${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]} ${p4[0]},${p4[1]}`
+          `${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]} ${p4[0]},${p4[1]}`,
         );
       }
 
       board.push(box);
     }
 
-    //rearranging the array for right direction
     return board
       .map((ele, i) => (i % 3 !== 0 ? ele.reverse() : ele))
       .reduce((acc, curr) => {
         acc.push(...curr);
         return acc;
       }, []);
-  }
+  }, [lineCoordinates]);
 
-  
+  // Generate boxes from line coordinates for playerMove
+  const boxes = useMemo(() => {
+    return generateBoxesFromLineCoordinates();
+  }, [generateBoxesFromLineCoordinates]);
 
   return (
     <>
