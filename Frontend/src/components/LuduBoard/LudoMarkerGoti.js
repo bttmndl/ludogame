@@ -79,7 +79,6 @@ function LudoMarkerGoti({
   const [activeGotiId, setActiveGotiId] = useState(null);
   const [stepsLeft, setStepsLeft] = useState(0);
   const [animatedBox, setAnimatedBox] = useState(null);
-  const [movePath, setMovePath] = useState([]);
   const [jumpState, setJumpState] = useState(null);
 
   // ✅ Stable refs to avoid animation restarts
@@ -108,7 +107,6 @@ function LudoMarkerGoti({
 
     setActiveGotiId(moveRequest.gotiId);
     setStepsLeft(moveRequest.steps);
-    setMovePath(moveRequest.path || []);
 
     if (g.position === -1) {
       setAnimatedBox(player.start - 1);
@@ -133,7 +131,6 @@ function LudoMarkerGoti({
       stepsLeftRef.current = 0;
       setAnimatedBox(nextBox);
       setStepsLeft(0);
-      setMovePath([]);
       onMoveCompleteRef.current(activeGotiId, nextBox);
       setActiveGotiId(null);
       return;
@@ -165,7 +162,6 @@ function LudoMarkerGoti({
 
         // ✅ Update refs immediately (no re-render delay)
         movePathRef.current = movePathRef.current.slice(1);
-        setMovePath((path) => path.slice(1));
 
         const remaining = stepsLeftRef.current - 1;
         stepsLeftRef.current = remaining;
@@ -175,7 +171,6 @@ function LudoMarkerGoti({
         if (remaining === 0) {
           onMoveCompleteRef.current(activeGotiId, nextBox);
           movePathRef.current = [];
-          setMovePath([]);
           setActiveGotiId(null);
         }
       }
