@@ -63,6 +63,7 @@ function LudoBoard({
   onRollDice,
   onMoveGoti,
   onGameStateChange,
+  onTurnChange,
 }) {
 
   const TOTAL_CELLS = playerCount * 18;
@@ -417,6 +418,13 @@ function LudoBoard({
       return `hsl(${hue}, 70%, 50%)`;
     });
   }, [playerCount]);
+
+  useEffect(() => {
+    onTurnChange?.({
+      currentPlayer: game.currentPlayer,
+      colors: numberWiseColor,
+    });
+  }, [game.currentPlayer, numberWiseColor, onTurnChange]);
 
   /* ================= GEOMETRY ================= */
 

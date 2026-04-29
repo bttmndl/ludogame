@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import LudoBoard from "./LudoBoard";
 import { createRealtimeClient } from "./realtime";
@@ -23,6 +23,7 @@ const App = () => {
   const [gameKey, setGameKey] = useState(0);
   const [remoteGameState, setRemoteGameState] = useState(null);
   const [remoteAction, setRemoteAction] = useState(null);
+  const [turnInfo, setTurnInfo] = useState({ currentPlayer: 0, colors: [] });
   const [error, setError] = useState("");
   const [roomModalMode, setRoomModalMode] = useState(null);
   const [authModalMode, setAuthModalMode] = useState(null);
@@ -176,6 +177,10 @@ const App = () => {
     });
   }
 
+  const handleTurnChange = useCallback((nextTurnInfo) => {
+    setTurnInfo(nextTurnInfo);
+  }, []);
+
   const online = Boolean(room);
 
   return (
@@ -245,12 +250,34 @@ const App = () => {
           <div className="playersDock">
             {room
               ? room.players?.map((player) => (
-                  <span key={player.id}>
+                  <span
+                    key={player.id}
+                    className={
+                      player.playerId === turnInfo.currentPlayer
+                        ? "activePlayer"
+                        : ""
+                    }
+                    style={
+                      player.playerId === turnInfo.currentPlayer
+                        ? { "--player-color": turnInfo.colors[player.playerId] }
+                        : undefined
+                    }
+                  >
                     P{player.playerId + 1}: {player.name}
                   </span>
                 ))
               : Array.from({ length: playerCount }, (_, index) => (
-                  <span key={index}>
+                  <span
+                    key={index}
+                    className={
+                      index === turnInfo.currentPlayer ? "activePlayer" : ""
+                    }
+                    style={
+                      index === turnInfo.currentPlayer
+                        ? { "--player-color": turnInfo.colors[index] }
+                        : undefined
+                    }
+                  >
                     P{index + 1}: {index === 0 ? playerName : "Robot"}
                   </span>
                 ))}
@@ -268,6 +295,7 @@ const App = () => {
           onRollDice={sendRoll}
           onMoveGoti={sendMove}
           onGameStateChange={syncState}
+          onTurnChange={handleTurnChange}
         />
       </main>
 
