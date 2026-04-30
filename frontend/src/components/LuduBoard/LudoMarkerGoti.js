@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from "react";
+import { playSound } from "../../soundEffects";
 
 /* ---------------- OFFSET HELPER ---------------- */
 function getGotiOffset(index, total) {
@@ -145,6 +146,8 @@ function LudoMarkerGoti({
       x: markers[nextBox].headCircle[0],
       y: markers[nextBox].headCircle[1],
     };
+
+    playSound("step");
 
     let start = null;
     const duration = 260;

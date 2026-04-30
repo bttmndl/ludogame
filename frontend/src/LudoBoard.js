@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import LudoTrianglePlayerBox from "./components/LuduBoard/LudoTrianglePlayerBox";
 import LudoStarBoxes from "./components/LuduBoard/LudoStarBoxes";
 import LudoMarkerGoti from "./components/LuduBoard/LudoMarkerGoti";
@@ -14,6 +14,7 @@ import { generateInnerTriangleCordForPlayerBox } from "./geometry/innerTriangle"
 import { generateWinBoxCord } from "./geometry/winbox";
 import { generateCircleCordForPlayer } from "./geometry/circle";
 import { generateHomeDropdownMarker } from "./geometry/homeMarkers";
+import { playSound } from "./soundEffects";
 
 // Constants
 const POLYGON_SIZE = 80;
@@ -86,6 +87,11 @@ function LudoBoard({
   }));
 
   const [moveRequest, setMoveRequest] = useState(null);
+  const lastDiceRef = useRef(null);
+  const lastTurnRef = useRef(0);
+  const lastWinnerRef = useRef(null);
+  const skipNextDiceSoundRef = useRef(false);
+  const skipNextMoveStartSoundRef = useRef(false);
 
   const isHumanTurn = useCallback((playerId = game.currentPlayer) => {
     if (online) return localPlayerId === playerId;
@@ -162,32 +168,30 @@ function LudoBoard({
     [game.gotis, PLAYERS, SAFE_CELLS, TOTAL_CELLS],
   );
 
-  const requestMove = useCallback((gotiId, playerId = game.currentPlayer) => {
+  const requestMove = useCallback((gotiId, playerId = game.currentPlayer, options = {}) => {
+    const rejectMove = () => {
+      if (options.feedback) playSound("blocked");
+      return false;
+    };
+
     // 1. Check if dice is rolled, not animating, and no winner
-    if (!game.dice || isRolling || game.winner !== null) return;
-    if (online && playerId !== game.currentPlayer) return;
+    if (!game.dice || isRolling || game.winner !== null) return rejectMove();
+    if (online && playerId !== game.currentPlayer) return rejectMove();
     if (enableBots && !isHumanTurn(playerId)) {
-      if (playerId === localPlayerId) return;
+      if (playerId === localPlayerId) return rejectMove();
     }
 
     // 2. Find the goti
     const goti = game.gotis.find((g) => g.id === gotiId);
-    if (!goti || goti.playerId !== playerId || goti.finished) return;
+    if (!goti || goti.playerId !== playerId || goti.finished) return rejectMove();
 
     // 3. Calculate the move
     const move = calculateMove(goti, game.dice);
-    if (!move) return;
+    if (!move) return rejectMove();
 
-    console.log(`--- Goti Move Analysis ---
-    - Goti ID: ${goti.id}
-    - Player: ${goti.playerId}
-    - Start Position: ${goti.position}
-    - Dice Roll: ${game.dice}
-    - Calculated Path: [${move?.path?.join(" -> ")}]
-    - Final Position: ${move.newPosition}
-    - Finished: ${move.finished}
-    - Ate: ${move.ate}
-    --------------------------`);
+    if (options.sound !== false) {
+      playSound(goti.position === -1 ? "open" : "select");
+    }
 
     // 4. Set up the animation request
     setIsRolling(true);
@@ -196,6 +200,7 @@ function LudoBoard({
       steps: game.dice,
       ...move,
     });
+    return true;
   }, [
     game.currentPlayer,
     game.dice,
@@ -220,6 +225,33 @@ function LudoBoard({
   }, [remoteGameState]);
 
   useEffect(() => {
+    if (lastDiceRef.current === null && game.dice !== null) {
+      if (skipNextDiceSoundRef.current) {
+        skipNextDiceSoundRef.current = false;
+      } else {
+        playSound("dice");
+      }
+    }
+
+    lastDiceRef.current = game.dice;
+  }, [game.dice]);
+
+  useEffect(() => {
+    if (lastTurnRef.current !== game.currentPlayer) {
+      playSound(isHumanTurn(game.currentPlayer) ? "turn" : "status");
+      lastTurnRef.current = game.currentPlayer;
+    }
+  }, [game.currentPlayer, isHumanTurn]);
+
+  useEffect(() => {
+    if (lastWinnerRef.current !== game.winner && game.winner !== null) {
+      playSound("win");
+    }
+
+    lastWinnerRef.current = game.winner;
+  }, [game.winner]);
+
+  useEffect(() => {
     if (!remoteAction) return;
 
     if (remoteAction.type === "roll") {
@@ -242,7 +274,14 @@ function LudoBoard({
     }
 
     if (remoteAction.type === "move") {
-      requestMove(remoteAction.gotiId, remoteAction.playerId);
+      const skipStartSound =
+        remoteAction.playerId === localPlayerId &&
+        skipNextMoveStartSoundRef.current;
+
+      skipNextMoveStartSoundRef.current = false;
+      requestMove(remoteAction.gotiId, remoteAction.playerId, {
+        sound: !skipStartSound,
+      });
     }
   }, [remoteAction, localPlayerId, requestMove, onGameStateChange]);
 
@@ -335,6 +374,14 @@ function LudoBoard({
   function onMoveComplete(gotiId /*, finalBox is ignored */) {
     if (!moveRequest || moveRequest.gotiId !== gotiId) return;
 
+    if (moveRequest.ate) {
+      playSound("capture");
+    } else if (moveRequest.finished) {
+      playSound("finish");
+    } else {
+      playSound("land");
+    }
+
     setGame((prev) => {
       const { newPosition, finished, ate } = moveRequest;
 
@@ -398,16 +445,38 @@ function LudoBoard({
 
   function handleAnimation(gotiId) {
     if (online) {
-      if (localPlayerId !== game.currentPlayer) return;
+      if (!game.dice || isRolling || game.winner !== null) {
+        playSound("blocked");
+        return;
+      }
+      if (localPlayerId !== game.currentPlayer) {
+        playSound("blocked");
+        return;
+      }
       const goti = game.gotis.find((g) => g.id === gotiId);
-      if (!goti || goti.playerId !== localPlayerId) return;
+      if (!goti || goti.playerId !== localPlayerId) {
+        playSound("blocked");
+        return;
+      }
+      if (!calculateMove(goti, game.dice)) {
+        playSound("blocked");
+        return;
+      }
+      skipNextMoveStartSoundRef.current = true;
+      playSound(goti.position === -1 ? "open" : "select");
       onMoveGoti?.(gotiId);
+      window.setTimeout(() => {
+        skipNextMoveStartSoundRef.current = false;
+      }, 1500);
       return;
     }
 
-    if (enableBots && !isHumanTurn()) return;
+    if (enableBots && !isHumanTurn()) {
+      playSound("blocked");
+      return;
+    }
 
-    requestMove(gotiId);
+    requestMove(gotiId, game.currentPlayer, { feedback: true });
   }
 
   /* ================= COLORS ================= */
@@ -460,15 +529,6 @@ function LudoBoard({
     return generateDropdownMarker(boxes);
   }, [boxes]);
 
-  // --- DEBUG LOGGING ---
-  useEffect(() => {
-    console.log("--- BOARD DEBUG INFO ---");
-    console.log("Board Markers (Position -> Coordinates):", markers);
-    console.log("Player Details (start is base for spawn calc):", PLAYERS);
-    console.log("Safe Cells (logical positions):", SAFE_CELLS);
-    console.log("------------------------");
-  }, [markers, PLAYERS, SAFE_CELLS]);
-
   const [triangleCoordsArray, triangleCoordsStringArray] = useMemo(() => {
     return generateTriangleCordForPlayerBox(lineCoordinates);
   }, [lineCoordinates]);
@@ -492,7 +552,6 @@ function LudoBoard({
   // const starCords = useMemo(() => {
   //   return generateStarPolygon(boxes, playerCount);
   // }, [boxes, playerCount]);f
-  console.log("gotis", game.gotis);
   return (
     <div className="boardShell">
       <svg
@@ -512,14 +571,28 @@ function LudoBoard({
                 : "pointer",
           }}
           onClick={() => {
-            if (isRolling || game.dice || game.winner !== null) return;
-            if (online && localPlayerId !== game.currentPlayer) return;
-            if (enableBots && !isHumanTurn()) return;
+            if (isRolling || game.dice || game.winner !== null) {
+              playSound("blocked");
+              return;
+            }
+            if (online && localPlayerId !== game.currentPlayer) {
+              playSound("blocked");
+              return;
+            }
+            if (enableBots && !isHumanTurn()) {
+              playSound("blocked");
+              return;
+            }
 
             // roll dice only (no move yet)
             const diceValue = Math.floor(Math.random() * 6) + 1;
             if (online) {
+              skipNextDiceSoundRef.current = true;
+              playSound("dice");
               onRollDice?.(diceValue);
+              window.setTimeout(() => {
+                skipNextDiceSoundRef.current = false;
+              }, 1500);
             } else {
               setGame((prev) => ({ ...prev, dice: diceValue }));
             }

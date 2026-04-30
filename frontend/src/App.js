@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css";
 import LudoBoard from "./LudoBoard";
 import { createRealtimeClient } from "./realtime";
+import { initSoundEffects, playSound } from "./soundEffects";
 
 function makeRoomCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -35,13 +36,19 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [navOpen, setNavOpen] = useState(false);
   const clientRef = useRef(null);
+  const didReportConnectionStatus = useRef(false);
 
   const clientId = useMemo(getClientId, []);
+
+  useEffect(() => {
+    initSoundEffects();
+  }, []);
 
   useEffect(() => {
     clientRef.current = createRealtimeClient(
       ({ type, payload }) => {
         if (type === "joined_room") {
+          playSound("room");
           setError("");
           setRobotMatch(false);
           setRoom(payload);
@@ -53,6 +60,7 @@ const App = () => {
         }
 
         if (type === "room_update") {
+          playSound("status");
           setRoom(payload);
           if (payload.playerCount) setPlayerCount(payload.playerCount);
           return;
@@ -85,6 +93,7 @@ const App = () => {
         }
 
         if (type === "error") {
+          playSound("blocked");
           setError(payload.message || "Realtime error.");
         }
       },
@@ -93,6 +102,21 @@ const App = () => {
 
     return () => clientRef.current?.close();
   }, []);
+
+  useEffect(() => {
+    if (!didReportConnectionStatus.current) {
+      didReportConnectionStatus.current = true;
+      return;
+    }
+
+    if (connectionStatus === "connected") {
+      playSound("status");
+    }
+
+    if (connectionStatus === "disconnected" || connectionStatus === "error") {
+      playSound("blocked", { volume: 0.12 });
+    }
+  }, [connectionStatus]);
 
   function joinRoom(nextRoomCode = roomCode) {
     const cleanRoomCode = nextRoomCode.trim().toUpperCase();
@@ -118,6 +142,7 @@ const App = () => {
   }
 
   function startRobotMatch() {
+    playSound("room");
     setError("");
     setRoom(null);
     setRobotMatch(true);
@@ -142,6 +167,7 @@ const App = () => {
 
   function handleSocialAuth(provider) {
     const name = provider === "google" ? "Google Player" : "Meta Player";
+    playSound("finish", { volume: 0.3 });
     setUser({
       name,
       email: `${provider}@example.com`,
@@ -153,6 +179,7 @@ const App = () => {
   function submitAuth(event) {
     event.preventDefault();
     const name = authForm.name.trim() || authForm.email.split("@")[0] || "Player";
+    playSound("finish", { volume: 0.3 });
     setUser({
       name,
       email: authForm.email.trim(),
@@ -183,8 +210,18 @@ const App = () => {
 
   const online = Boolean(room);
 
+  function handleAppClickCapture(event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const control = target.closest("button, input, select, [role='tab']");
+    if (!control || control.disabled) return;
+
+    playSound("ui");
+  }
+
   return (
-    <div className="App">
+    <div className="App" onClickCapture={handleAppClickCapture}>
       <header className="appHeader">
         <div className="brandBlock">
           <span className="brandMark">L</span>

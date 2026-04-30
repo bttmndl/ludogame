@@ -120,7 +120,6 @@ function LudoStarBoxes({numberWiseColor, playerCount, lineCoordinates}) {
 
   //   return [x3, y3, x4, y4];
   // }
-  console.log("STARCORDS", starCords)
   return (
     <>
       {starCords?.map((cord, idx) => (
