@@ -6,22 +6,33 @@ import playerMoveUrl from "./assets/playerMove.mp3";
 
 const isBrowser = typeof window !== "undefined";
 const isTest = process.env.NODE_ENV === "test";
+const kenneyBasePath = `${process.env.PUBLIC_URL || ""}/kenney`;
+
+function kenneySound(path) {
+  return `${kenneyBasePath}/${path}`;
+}
 
 const SOUND_SOURCES = {
-  blocked: blinkSoundUrl,
-  capture: blinkSoundUrl,
-  dice: diceThrowUrl,
-  finish: gotiOpenUrl,
-  land: moveUrl,
-  open: gotiOpenUrl,
-  room: moveUrl,
-  select: playerMoveUrl,
-  status: blinkSoundUrl,
-  step: playerMoveUrl,
-  turn: blinkSoundUrl,
-  ui: playerMoveUrl,
-  win: gotiOpenUrl,
+  blocked: [kenneySound("interface/error_002.wav"), blinkSoundUrl],
+  capture: [kenneySound("interface/error_004.wav"), blinkSoundUrl],
+  dice: [kenneySound("casino_audio/dice_roll.wav"), diceThrowUrl],
+  finish: [kenneySound("interface/confirmation_004.wav"), gotiOpenUrl],
+  land: [kenneySound("interface/click_004.wav"), moveUrl],
+  open: [kenneySound("interface/whoosh_001.wav"), gotiOpenUrl],
+  room: [kenneySound("interface/confirmation_001.wav"), moveUrl],
+  select: [kenneySound("interface/click_002.wav"), playerMoveUrl],
+  status: [kenneySound("interface/notification_001.wav")],
+  step: [kenneySound("interface/click_002.wav"), playerMoveUrl],
+  turn: [kenneySound("interface/notification_001.wav")],
+  ui: [kenneySound("interface/click_002.wav"), playerMoveUrl],
+  win: [kenneySound("interface/confirmation_001.wav"), gotiOpenUrl],
 };
+
+function getSoundSources(name) {
+  const sources = SOUND_SOURCES[name];
+  if (!sources) return [];
+  return Array.isArray(sources) ? sources : [sources];
+}
 
 const SOUND_SETTINGS = {
   blocked: { volume: 0.16, cooldown: 120, rateJitter: 0.02 },
@@ -61,6 +72,7 @@ class SoundEffectsEngine {
     this.buffers = new Map();
     this.context = null;
     this.enabled = true;
+    this.failedSources = new Set();
     this.initialized = false;
     this.lastPlayedAt = new Map();
     this.masterGain = null;
@@ -132,12 +144,24 @@ class SoundEffectsEngine {
   }
 
   preload(name) {
-    const src = SOUND_SOURCES[name];
-    if (!src || !isBrowser || isTest) return Promise.resolve(null);
+    const sources = getSoundSources(name);
+    if (!sources.length || !isBrowser || isTest) return Promise.resolve(null);
 
     const context = this.getContext();
     if (!context || typeof window.fetch !== "function") {
-      this.primeAudioPool(src);
+      this.primeAudioPool(sources[sources.length - 1]);
+      return Promise.resolve(null);
+    }
+
+    return this.preloadFirstAvailableSource(sources);
+  }
+
+  preloadFirstAvailableSource(sources, index = 0) {
+    const src = sources[index];
+    if (!src) return Promise.resolve(null);
+    const context = this.getContext();
+    if (!context) {
+      this.primeAudioPool(sources[sources.length - 1]);
       return Promise.resolve(null);
     }
 
@@ -145,18 +169,27 @@ class SoundEffectsEngine {
       return Promise.resolve(this.buffers.get(src));
     }
 
+    if (this.failedSources.has(src)) {
+      return this.preloadFirstAvailableSource(sources, index + 1);
+    }
+
     if (!this.bufferPromises.has(src)) {
       const promise = window
         .fetch(src)
-        .then((response) => response.arrayBuffer())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Unable to load sound: ${src}`);
+          }
+          return response.arrayBuffer();
+        })
         .then((arrayBuffer) => decodeAudioData(context, arrayBuffer))
         .then((buffer) => {
           this.buffers.set(src, buffer);
           return buffer;
         })
         .catch(() => {
-          this.primeAudioPool(src);
-          return null;
+          this.failedSources.add(src);
+          return this.preloadFirstAvailableSource(sources, index + 1);
         });
 
       this.bufferPromises.set(src, promise);
@@ -184,8 +217,8 @@ class SoundEffectsEngine {
   play(name, options = {}) {
     if (!this.enabled || !isBrowser || isTest) return;
 
-    const src = SOUND_SOURCES[name];
-    if (!src) return;
+    const sources = getSoundSources(name);
+    if (!sources.length) return;
 
     const settings = SOUND_SETTINGS[name] || {};
     const now = performance.now();
@@ -204,6 +237,11 @@ class SoundEffectsEngine {
       options.rateJitter ?? settings.rateJitter ?? 0,
     );
 
+    this.preload(name);
+
+    const src =
+      sources.find((source) => this.buffers.has(source)) ||
+      sources[sources.length - 1];
     const context = this.getContext();
     const buffer = this.buffers.get(src);
 
@@ -223,7 +261,6 @@ class SoundEffectsEngine {
       return;
     }
 
-    this.preload(name);
     this.playWithAudioPool(src, volume, playbackRate);
   }
 

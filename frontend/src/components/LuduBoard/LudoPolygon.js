@@ -1,14 +1,20 @@
-import React from 'react'
+import React, { memo, useMemo } from "react";
 
-function LudoPolygon( {polygonData, polygonDataSmall}) {
+function LudoPolygon({ polygonData, polygonDataSmall }) {
+  const polygonPoints = useMemo(
+    () => polygonData?.map(({ x, y }) => `${x},${y}`).join(" "),
+    [polygonData],
+  );
+  const smallPolygonPoints = useMemo(
+    () => polygonDataSmall?.map(({ x, y }) => `${x},${y}`).join(" "),
+    [polygonDataSmall],
+  );
 
-
-  
   return (
     <>
       {/* Draw the polygon */}
       <polygon
-        points={polygonData?.map(({ x, y }) => `${x},${y}`).join(" ")}
+        points={polygonPoints}
         fill="none"
         stroke="green"
         strokeWidth="2"
@@ -16,7 +22,7 @@ function LudoPolygon( {polygonData, polygonDataSmall}) {
 
       {/* Draw the smaller polygon */}
       <polygon
-        points={polygonDataSmall?.map(({ x, y }) => `${x},${y}`).join(" ")}
+        points={smallPolygonPoints}
         fill="none"
         stroke="green"
         strokeWidth="2"
@@ -25,4 +31,4 @@ function LudoPolygon( {polygonData, polygonDataSmall}) {
   );
 }
 
-export default LudoPolygon;
+export default memo(LudoPolygon);

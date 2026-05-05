@@ -80,13 +80,16 @@ function LudoMarkerGoti({
   const [activeGotiId, setActiveGotiId] = useState(null);
   const [stepsLeft, setStepsLeft] = useState(0);
   const [animatedBox, setAnimatedBox] = useState(null);
-  const [jumpState, setJumpState] = useState(null);
 
   // ✅ Stable refs to avoid animation restarts
+  const activeGotiRef = useRef(null);
+  const activeShadowRef = useRef(null);
   const rafRef = useRef(null);
   const movePathRef = useRef([]);
+  const startPositionRef = useRef(null);
   const stepsLeftRef = useRef(0);
   const onMoveCompleteRef = useRef(onMoveComplete);
+  const openedFromHomeRef = useRef(false);
 
   // ✅ Keep onMoveComplete ref updated without triggering re-renders
   useEffect(() => {
@@ -104,7 +107,9 @@ function LudoMarkerGoti({
 
     // ✅ Set refs first so animation loop reads correct values immediately
     movePathRef.current = moveRequest.path || [];
+    startPositionRef.current = g.position;
     stepsLeftRef.current = moveRequest.steps;
+    openedFromHomeRef.current = Boolean(moveRequest.openedFromHome);
 
     setActiveGotiId(moveRequest.gotiId);
     setStepsLeft(moveRequest.steps);
@@ -130,6 +135,10 @@ function LudoMarkerGoti({
       // Safety: markers missing, finish animation immediately
       movePathRef.current = [];
       stepsLeftRef.current = 0;
+      activeGotiRef.current?.removeAttribute("transform");
+      if (activeShadowRef.current) {
+        activeShadowRef.current.style.opacity = 0;
+      }
       setAnimatedBox(nextBox);
       setStepsLeft(0);
       onMoveCompleteRef.current(activeGotiId, nextBox);
@@ -146,8 +155,22 @@ function LudoMarkerGoti({
       x: markers[nextBox].headCircle[0],
       y: markers[nextBox].headCircle[1],
     };
+    const baseBox =
+      startPositionRef.current === -1 ? fromBox : startPositionRef.current;
+    const baseMarker = markers[baseBox];
+    const activeNode = activeGotiRef.current;
+    const shadowNode = activeShadowRef.current;
 
-    playSound("step");
+    if (!baseMarker || !activeNode) return;
+
+    const base = {
+      x: baseMarker.headCircle[0],
+      y: baseMarker.headCircle[1],
+    };
+
+    if (!openedFromHomeRef.current) {
+      playSound("step");
+    }
 
     let start = null;
     const duration = 260;
@@ -155,17 +178,33 @@ function LudoMarkerGoti({
     function frame(time) {
       if (!start) start = time;
       const t = Math.min((time - start) / duration, 1);
+      const jump = getJumpTransform(from, to, t);
 
-      setJumpState(getJumpTransform(from, to, t));
+      activeNode.setAttribute(
+        "transform",
+        `
+          translate(${jump.x - base.x}, ${jump.y - base.y})
+          translate(${base.x}, ${base.y})
+          scale(${jump.scaleX}, ${jump.scaleY})
+          translate(${-base.x}, ${-base.y})
+        `,
+      );
+
+      if (shadowNode) {
+        shadowNode.style.opacity = t < 1 ? 1 : 0;
+      }
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(frame);
       } else {
-        setJumpState(null);
+        if (shadowNode) {
+          shadowNode.style.opacity = 0;
+        }
 
         // ✅ Update refs immediately (no re-render delay)
         movePathRef.current = movePathRef.current.slice(1);
         const remaining = stepsLeftRef.current - 1;
+        const shouldClearHomeTransform = startPositionRef.current === -1;
         stepsLeftRef.current = remaining;
         setStepsLeft(remaining);
         setAnimatedBox(nextBox);
@@ -175,11 +214,22 @@ function LudoMarkerGoti({
           movePathRef.current = [];
           setActiveGotiId(null);
         }
+
+        if (shouldClearHomeTransform) {
+          requestAnimationFrame(() => {
+            activeGotiRef.current?.removeAttribute("transform");
+          });
+        }
       }
     }
 
     rafRef.current = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      if (shadowNode) {
+        shadowNode.style.opacity = 0;
+      }
+    };
 
     // ✅ Stable deps only — movePath/onMoveComplete/gotis removed to prevent animation restarts
   }, [activeGotiId, stepsLeft, animatedBox, markers]);
@@ -317,37 +367,34 @@ function LudoMarkerGoti({
         return cellGotis.map((goti, index) => {
           const { dx, dy } = getGotiOffset(index, cellGotis.length);
           const isActive = goti.id === activeGotiId;
-          const jump = isActive ? jumpState : null;
           let transform = undefined;
 
-          if (isActive) {
-            if (jump) {
-              transform = `
-                    translate(${jump.x - baseX}, ${jump.y - baseY})
-                    translate(${baseX}, ${baseY})
-                    scale(${jump.scaleX}, ${jump.scaleY})
-                    translate(${-baseX}, ${-baseY})
-                  `;
-            } else if (
-              animatedBox !== null &&
-              animatedBox !== boxIndex &&
-              markers[animatedBox]
-            ) {
-              // Keep position between steps
-              const dest = markers[animatedBox].headCircle;
-              transform = `translate(${dest[0] - baseX}, ${dest[1] - baseY})`;
-            }
+          if (
+            isActive &&
+            animatedBox !== null &&
+            animatedBox !== boxIndex &&
+            markers[animatedBox]
+          ) {
+            // Keep position between steps without rerendering every frame.
+            const dest = markers[animatedBox].headCircle;
+            transform = `translate(${dest[0] - baseX}, ${dest[1] - baseY})`;
           }
 
           return (
-            <g key={goti.id} transform={transform}>
-              {jump && (
+            <g
+              key={goti.id}
+              ref={isActive ? activeGotiRef : null}
+              transform={transform}
+            >
+              {isActive && (
                 <ellipse
+                  ref={activeShadowRef}
                   cx={baseX + dx}
                   cy={baseY + dy + 6}
                   rx={12}
                   ry={5}
                   fill="rgba(0,0,0,0.25)"
+                  style={{ opacity: 0, pointerEvents: "none" }}
                 />
               )}
 

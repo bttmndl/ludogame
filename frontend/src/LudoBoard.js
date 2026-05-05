@@ -88,7 +88,6 @@ function LudoBoard({
 
   const [moveRequest, setMoveRequest] = useState(null);
   const lastDiceRef = useRef(null);
-  const lastTurnRef = useRef(0);
   const lastWinnerRef = useRef(null);
   const skipNextDiceSoundRef = useRef(false);
   const skipNextMoveStartSoundRef = useRef(false);
@@ -188,9 +187,10 @@ function LudoBoard({
     // 3. Calculate the move
     const move = calculateMove(goti, game.dice);
     if (!move) return rejectMove();
+    const openedFromHome = goti.position === -1;
 
     if (options.sound !== false) {
-      playSound(goti.position === -1 ? "open" : "select");
+      playSound(openedFromHome ? "open" : "select");
     }
 
     // 4. Set up the animation request
@@ -198,6 +198,7 @@ function LudoBoard({
     setMoveRequest({
       gotiId,
       steps: game.dice,
+      openedFromHome,
       ...move,
     });
     return true;
@@ -235,13 +236,6 @@ function LudoBoard({
 
     lastDiceRef.current = game.dice;
   }, [game.dice]);
-
-  useEffect(() => {
-    if (lastTurnRef.current !== game.currentPlayer) {
-      playSound(isHumanTurn(game.currentPlayer) ? "turn" : "status");
-      lastTurnRef.current = game.currentPlayer;
-    }
-  }, [game.currentPlayer, isHumanTurn]);
 
   useEffect(() => {
     if (lastWinnerRef.current !== game.winner && game.winner !== null) {
@@ -378,7 +372,7 @@ function LudoBoard({
       playSound("capture");
     } else if (moveRequest.finished) {
       playSound("finish");
-    } else {
+    } else if (!moveRequest.openedFromHome) {
       playSound("land");
     }
 
@@ -624,8 +618,7 @@ function LudoBoard({
         </g>
 
         <LudoBoxes
-          lineCoordinates={lineCoordinates}
-          handleAnimation={handleAnimation}
+          boxes={boxes}
           numberWiseColor={numberWiseColor}
           playerCount={playerCount}
         />
@@ -651,7 +644,7 @@ function LudoBoard({
         <LudoStarBoxes
           numberWiseColor={numberWiseColor}
           playerCount={playerCount}
-          lineCoordinates={lineCoordinates}
+          boxes={boxes}
         />
 
         <LudoMarkerGoti

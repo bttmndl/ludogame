@@ -210,18 +210,8 @@ const App = () => {
 
   const online = Boolean(room);
 
-  function handleAppClickCapture(event) {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-
-    const control = target.closest("button, input, select, [role='tab']");
-    if (!control || control.disabled) return;
-
-    playSound("ui");
-  }
-
   return (
-    <div className="App" onClickCapture={handleAppClickCapture}>
+    <div className="App">
       <header className="appHeader">
         <div className="brandBlock">
           <span className="brandMark">L</span>

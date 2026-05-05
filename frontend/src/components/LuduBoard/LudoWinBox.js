@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { memo } from "react";
 
-function LudoWinBox({winBoxCordLine, numberWiseColor, playerCount}) {
+function LudoWinBox({ winBoxCordLine, numberWiseColor, playerCount }) {
 
   return (
     <>
@@ -18,4 +18,4 @@ function LudoWinBox({winBoxCordLine, numberWiseColor, playerCount}) {
   );
 }
 
-export default LudoWinBox
+export default memo(LudoWinBox);
